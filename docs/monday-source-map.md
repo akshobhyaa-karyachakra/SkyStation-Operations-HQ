@@ -36,6 +36,19 @@ Build and validate adapters in this order:
 - Report Submission uses `Submission Status`, report dates, `Report Link`, `Processed By`, and relations to Activity Repository and Service Request Intake.
 - Site Activities uses `Planned Date`, `Activity Date`, `Visit By`, and a relation that can target both Activity Repository and Customer Repository.
 
+## Activity Repository readback (2026-08-27)
+
+The authenticated read-only fetch completed across three pages: 25 + 25 + 22 = 72 items. The current data contains:
+
+- recurring work marked `Yes` and `No`, plus `On Demand` rows;
+- activity types including Worksite Monitoring, AC Monitoring, DC Monitoring, O&M Inspection, One Time Activity, Security and Surveillance, Site Activity/ Visit, and hardware support/installation work;
+- 22 items without a customer relation, including internal/support work, so those records must remain visible as `needs_review` rather than being assigned to a customer by name;
+- multi-customer relation rows for shared hardware/support activities;
+- missing cadence and assignment dates on some records;
+- owner values that include names or email-like text in the current board representation, which the server adapter must resolve to Monday People IDs when the GraphQL response exposes them and otherwise preserve as unresolved owner data.
+
+The adapter acceptance target is a normalized snapshot with 72 unique source item IDs, no inferred customer joins, explicit `needs_review` flags for missing activity type/state/customer relation, and no claim that a planned row represents completed work.
+
 ## Source map rules
 
 - Treat board metadata as live configuration; do not hardcode column positions.
