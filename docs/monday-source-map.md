@@ -55,6 +55,12 @@ The authenticated read-only fetch completed across three pages: 25 + 25 + 22 = 7
 
 The adapter acceptance target is a normalized snapshot with 72 unique source item IDs, no inferred customer joins, explicit `needs_review` flags for missing activity type/state/customer relation, and no claim that a planned row represents completed work.
 
+## Report Submission readback (2026-08-27)
+
+The authenticated read-only fetch completed across four pages: 50 + 50 + 50 + 4 = 154 items. Report Submission carries an explicit Activity Repository relation and, for selected customer requests, a separate Adani Service Request Intake relation. Delivery state, blocker, report link, processing/report dates, and assignee evidence are preserved independently.
+
+Completed rows can have a missing report link, while some report links point to Spectra inspection or layer views rather than a report URL. The adapter therefore preserves the exact link and marks `Done` without a link as `needs_review`; it does not infer delivery from a date or from the item name. Stuck and Not Done rows retain the board's blocker text, including customer, network, wind, power, battery, sensor, and array-layout reasons.
+
 ## Source map rules
 
 - Treat board metadata as live configuration; do not hardcode column positions.
