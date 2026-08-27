@@ -129,6 +129,12 @@ No handoff is created from matching names, site text, or display labels alone.
 - `unavailable`: no valid snapshot is available.
 - `needs_review`: snapshot exists but a contract invariant failed.
 
+## Entity: inventory_asset
+
+Canonical source: `SkyStation Inventory` (`5028042389`). The asset model preserves physical inventory identity and source-backed relations without inferring customer ownership from location or names.
+
+Every record uses schema `inventory_asset.v1` and carries the source item/group IDs, asset type, serial or explicit unit identifier, condition, location, maintenance dates, battery cycle count where present, and separate relations to SkyStation Customer Repository (`5028043141`), Customer Repository subitems (`5028043142`), and Incident Logs (`5030309792`). Missing type/serial identifiers and unexpected relation targets are `needs_review`; unmatched stock remains unlinked.
+
 When a sync fails, serve the last valid protected snapshot with its age and error state. Never silently use hardcoded frontend values.
 
 ## Customer-safe projection

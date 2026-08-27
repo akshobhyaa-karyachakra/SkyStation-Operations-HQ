@@ -73,6 +73,12 @@ The authenticated read-only fetch returned 43 items in one page from `6_Work Tra
 
 Observed statuses include In Progress, Done, Stuck, Not Started, and Partially Completed. The adapter preserves source status and ownership, marks active work without an owner for review, and flags Done items without an end date; it does not infer customer, project, or delivery meaning from task names, categories, notes, or file links.
 
+## Inventory readback (2026-08-27)
+
+The authenticated read-only fetch returned 121 items from `SkyStation Inventory` (`5028042389`) across SkyStations, Drones, Batteries, Relay stations, Hardware, Memory Cards, Routers, CCTV Cameras, Remote Controls, and Installation Kits. Stable source identity is the Monday item ID plus the source serial/unit field; group ID/title is retained as inventory category context.
+
+The board has separate relations to the SkyStation Customer Repository (`5028043141`), Customer Repository subitems (`5028043142`), and Incident Logs (`5030309792`). The adapter preserves each relation type and target ID independently, along with condition, location, maintenance, and battery cycle fields. It leaves stock or incomplete rows unlinked and marks missing type/serial identifiers or unexpected relation targets as `needs_review`; location text alone is never used to infer customer ownership.
+
 ## Source map rules
 
 - Treat board metadata as live configuration; do not hardcode column positions.
