@@ -1,0 +1,45 @@
+# Live Monday source map
+
+Captured from authenticated Monday read-only board metadata on 2026-08-27. IDs below are verified board IDs; column IDs are verified from each board schema and must be re-read before mutations.
+
+| Purpose | Board | Board ID | Current items | Key relation / identity |
+|---|---|---:|---:|---|
+| People master | SkyStation Crew Repository | `5030902067` | 15 | item group + People Manager |
+| Planning master | SkyStation Activity Repository | `5027240228` | 72 | `board_relation_mm2qwdd3` → Customer Repository |
+| Flight execution | 1_Flight Operations | `5027240883` | 21 | `board_relation_mm1gwp2a` → Activity Repository |
+| Processing and QA | 2_Processing and QA | `5027256991` | 14 | `board_relation_mm1gwp2a` → Activity Repository |
+| Report delivery | 3_Report Submission | `5027265596` | 154 | `board_relation_mm1gwp2a` → Activity Repository; service intake relation |
+| Site execution | 4_Site Activities | `5028018276` | 44 | `board_relation_mm1gwp2a` → Activity/Customer Repository |
+| Internal work | 6_Work Tracker | `5029561760` | not captured in this pass | requires schema read before adapter |
+| Fleet source | SkyStation Inventory | `5028042389` | not captured in this pass | requires schema read before adapter |
+| Incidents | 7_Incident Logs | `5030309792` | not captured in this pass | requires schema read before adapter |
+
+## First connector slice
+
+Build and validate adapters in this order:
+
+1. Crew Repository: complete and source-backed.
+2. Activity Repository: planning records only; no execution claims.
+3. Flight Operations: scheduled execution and owner/status evidence.
+4. Processing & QA: downstream handoff and processing evidence.
+5. Report Submission: delivery evidence and report links.
+6. Site Activities: separate execution path; inspect relation target before joining.
+
+## Known schema facts
+
+- Crew team is the Monday group, not a redundant Team column.
+- Crew `Manager` is a People column: `multiple_person_mm6msyq2`.
+- Crew `Availability` is a Status column: `color_mm6mamdg`.
+- Activity Repository has `Owner`, `Co Owner`, `Activity Type`, `Active`, `Weekly Frequency`, `Assignment Date`, and Customer Repository relation fields.
+- Flight Operations uses `Conducted By`, `Flight Status`, `Scheduled Date`, `Processing Assign`, `Blocker`, and `Completion Date (Automated)`.
+- Processing & QA uses `Assigned To`, `DA Start Date`, `Transfer Date`, `Processing Status`, `Files`, and blocker fields.
+- Report Submission uses `Submission Status`, report dates, `Report Link`, `Processed By`, and relations to Activity Repository and Service Request Intake.
+- Site Activities uses `Planned Date`, `Activity Date`, `Visit By`, and a relation that can target both Activity Repository and Customer Repository.
+
+## Source map rules
+
+- Treat board metadata as live configuration; do not hardcode column positions.
+- Re-read schemas before each adapter rollout because users can edit columns/views.
+- Use board relation IDs and People IDs for joins. Mirror text is not authoritative.
+- Preserve missing values as null and surface them as data-quality states.
+- Do not mutate any board during source-map discovery.
