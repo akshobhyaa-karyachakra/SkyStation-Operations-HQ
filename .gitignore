@@ -6,4 +6,5 @@ data/report_submission.snapshot.json
 data/site_activities.snapshot.json
 data/work_tracker.snapshot.json
 data/inventory.snapshot.json
+data/incident_logs.snapshot.json
 __pycache__/

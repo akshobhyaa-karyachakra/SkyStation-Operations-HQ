@@ -79,6 +79,12 @@ The authenticated read-only fetch returned 121 items from `SkyStation Inventory`
 
 The board has separate relations to the SkyStation Customer Repository (`5028043141`), Customer Repository subitems (`5028043142`), and Incident Logs (`5030309792`). The adapter preserves each relation type and target ID independently, along with condition, location, maintenance, and battery cycle fields. It leaves stock or incomplete rows unlinked and marks missing type/serial identifiers or unexpected relation targets as `needs_review`; location text alone is never used to infer customer ownership.
 
+## Incident Logs readback (2026-08-27)
+
+The authenticated read-only fetch returned 10 items from `7_Incident Logs` (`5030309792`). The board contains explicit fields for incident reference/date/time, site and asset context, error description/resolution, owner, source/evidence links, severity, incident status, RCA confirmation, repeat state, report quality, target/actual closure dates, closure blocker, escalation, and missing-to-close checklist.
+
+The adapter preserves separate relations to Inventory (`5028042389`), Customer Repository (`5028043141`), and Activity Repository (`5027240228`), plus distinct reported-by and actual-operator people fields. It flags missing references/statuses, closed rows without closure dates or final evidence, and unexpected relation targets; it does not infer RCA, CAPA/prevention, verification, or closure from neighboring fields.
+
 ## Source map rules
 
 - Treat board metadata as live configuration; do not hardcode column positions.

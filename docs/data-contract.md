@@ -135,6 +135,10 @@ Canonical source: `SkyStation Inventory` (`5028042389`). The asset model preserv
 
 Every record uses schema `inventory_asset.v1` and carries the source item/group IDs, asset type, serial or explicit unit identifier, condition, location, maintenance dates, battery cycle count where present, and separate relations to SkyStation Customer Repository (`5028043141`), Customer Repository subitems (`5028043142`), and Incident Logs (`5030309792`). Missing type/serial identifiers and unexpected relation targets are `needs_review`; unmatched stock remains unlinked.
 
+## Entity: incident
+
+Canonical source: `7_Incident Logs` (`5030309792`). Every record uses schema `incident.v1` and preserves the incident reference, incident/site/asset context, source and evidence links, owner/reporters/operators, status/severity, RCA and report-quality states, closure dates, closure blocker, escalation, and next-action fields. Inventory, customer, and Activity Repository relations are separate ID-backed arrays. “Closed”, “Final”, or “Resolved - Verify” are source states; the adapter does not infer RCA, prevention, verification, or closure evidence.
+
 When a sync fails, serve the last valid protected snapshot with its age and error state. Never silently use hardcoded frontend values.
 
 ## Customer-safe projection
