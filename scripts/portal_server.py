@@ -47,6 +47,15 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(payload)
 
     def do_GET(self) -> None:
+        if self.path == "/api/public-status":
+            sources = {}
+            for endpoint, snapshot in SNAPSHOTS.items():
+                sources[endpoint.removeprefix("/api/")] = {
+                    "state": "current" if snapshot.exists() else "unavailable",
+                    "schema_version": self._snapshot_schema(snapshot),
+                }
+            self._json(200, {"data_state": "current" if sources and all(v["state"] == "current" for v in sources.values()) else "unavailable", "sources": sources})
+            return
         if self.path in SNAPSHOTS:
             if not self._authorized():
                 self._json(401, {"error": "unauthorized"})
@@ -68,6 +77,16 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(404, {"error": "direct data access disabled"})
             return
         super().do_GET()
+
+    @staticmethod
+    def _snapshot_schema(snapshot: Path) -> str | None:
+        if not snapshot.exists():
+            return None
+        try:
+            body = json.loads(snapshot.read_text())
+            return body.get("schema_version") if isinstance(body, dict) else None
+        except (OSError, json.JSONDecodeError):
+            return None
 
     def log_message(self, format: str, *args) -> None:
         # Keep request logs useful without logging authorization headers or payloads.
