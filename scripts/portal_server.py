@@ -10,6 +10,7 @@ import json
 import os
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from portal_metrics import build_metrics
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOTS = {
@@ -47,6 +48,18 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(payload)
 
     def do_GET(self) -> None:
+        if self.path == "/api/metrics":
+            if not self._authorized():
+                self._json(401, {"error": "unauthorized"})
+                return
+            snapshots = {}
+            for name, snapshot in ((p.removeprefix("/api/"), path) for p, path in SNAPSHOTS.items()):
+                try:
+                    snapshots[name] = json.loads(snapshot.read_text()) if snapshot.exists() else None
+                except (OSError, json.JSONDecodeError):
+                    snapshots[name] = None
+            self._json(200, build_metrics(snapshots))
+            return
         if self.path == "/api/public-status":
             sources = {}
             for endpoint, snapshot in SNAPSHOTS.items():
