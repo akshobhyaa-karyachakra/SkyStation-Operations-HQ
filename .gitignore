@@ -4,4 +4,5 @@ data/flight_operations.snapshot.json
 data/processing_qa.snapshot.json
 data/report_submission.snapshot.json
 data/site_activities.snapshot.json
+data/work_tracker.snapshot.json
 __pycache__/

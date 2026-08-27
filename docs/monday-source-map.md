@@ -67,6 +67,12 @@ The authenticated read-only fetch returned 44 items in one page. The `SkyStation
 
 Site Activities has explicit Planned Date, Activity Date, Visit By, and blocker fields, but no usable status column in the verified schema. Activity Date is therefore retained as execution evidence, while missing Activity Date is `needs_review`; a blocker without a status is also surfaced as a source-schema inconsistency. Historical Tarun MJ assignments remain source evidence and are not converted into current capacity claims.
 
+## Work Tracker readback (2026-08-27)
+
+The authenticated read-only fetch returned 43 items in one page from `6_Work Tracker`. This is an internal solution-development and process-work board with Work ID, start/end dates, Task Status, Priority, People owners, Notes, Category, and file/text evidence. It has no customer or execution-board relation, so its records remain `internal_work` and are excluded from customer delivery, flight, and report-completion metrics unless a future explicit relation is added.
+
+Observed statuses include In Progress, Done, Stuck, Not Started, and Partially Completed. The adapter preserves source status and ownership, marks active work without an owner for review, and flags Done items without an end date; it does not infer customer, project, or delivery meaning from task names, categories, notes, or file links.
+
 ## Source map rules
 
 - Treat board metadata as live configuration; do not hardcode column positions.
