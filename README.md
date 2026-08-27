@@ -26,7 +26,8 @@ Crew Repository now has an explicit read-only data boundary:
 
 - `scripts/sync_crew_repository.py` calls Monday server-side using `MONDAY_API_TOKEN`, requests only the approved Crew Repository fields, normalizes records by Monday item/user IDs, validates counts and team assignments, and writes `data/crew_repository.snapshot.json`.
 - `scripts/validate_crew_snapshot.py` validates a snapshot without contacting Monday.
-- The Crew Management view loads the normalized snapshot over HTTP and fails closed with `no fallback data loaded` if it cannot load; it does not silently use a second roster fixture.
+- `scripts/portal_server.py` serves the portal and protected `/api/crew`; direct `/data` access is blocked. Production requires `PORTAL_API_TOKEN`; local-only testing can use `PORTAL_DEV_ALLOW_LOCAL=1` on loopback.
+- The Crew Management view loads `/api/crew` and fails closed with `no fallback data loaded` if it cannot load; it does not silently use a second roster fixture.
 
 Run the connector only in a trusted server/runtime:
 
