@@ -61,6 +61,12 @@ The authenticated read-only fetch completed across four pages: 50 + 50 + 50 + 4 
 
 Completed rows can have a missing report link, while some report links point to Spectra inspection or layer views rather than a report URL. The adapter therefore preserves the exact link and marks `Done` without a link as `needs_review`; it does not infer delivery from a date or from the item name. Stuck and Not Done rows retain the board's blocker text, including customer, network, wind, power, battery, sensor, and array-layout reasons.
 
+## Site Activities readback (2026-08-27)
+
+The authenticated read-only fetch returned 44 items in one page. The `SkyStation Activity Repository` relation is configured to allow targets on Activity Repository (`5027240228`) and a second board (`5028043141`); the fetched rows in this pass point to Activity Repository. The adapter preserves target board IDs and keeps any second-board relation separate instead of treating it as an Activity Repository join.
+
+Site Activities has explicit Planned Date, Activity Date, Visit By, and blocker fields, but no usable status column in the verified schema. Activity Date is therefore retained as execution evidence, while missing Activity Date is `needs_review`; a blocker without a status is also surfaced as a source-schema inconsistency. Historical Tarun MJ assignments remain source evidence and are not converted into current capacity claims.
+
 ## Source map rules
 
 - Treat board metadata as live configuration; do not hardcode column positions.
