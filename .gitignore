@@ -1,4 +1,5 @@
 data/crew_repository.snapshot.json
 data/activity_repository.snapshot.json
 data/flight_operations.snapshot.json
+data/processing_qa.snapshot.json
 __pycache__/

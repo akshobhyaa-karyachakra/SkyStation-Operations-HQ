@@ -36,6 +36,12 @@ Build and validate adapters in this order:
 - Report Submission uses `Submission Status`, report dates, `Report Link`, `Processed By`, and relations to Activity Repository and Service Request Intake.
 - Site Activities uses `Planned Date`, `Activity Date`, `Visit By`, and a relation that can target both Activity Repository and Customer Repository.
 
+## Processing & QA readback (2026-08-27)
+
+The authenticated read-only fetch returned 14 items from `2_Processing and QA`. The current board includes explicit Activity Repository relations for most work, CAD assignees, DA/transfer/processing dates, Processing Status, blocker values, and separate QA checks for ortho, shapefiles, CSV, and IDT.
+
+Two completed array-layout records currently have no Activity Repository relation. The adapter keeps them as `needs_review`; it does not attach them to a similarly named planning row. Several other rows have processing dates but remain `Working on it`, which is valid workflow evidence and must not be converted into completion merely because a date exists.
+
 ## Activity Repository readback (2026-08-27)
 
 The authenticated read-only fetch completed across three pages: 25 + 25 + 22 = 72 items. The current data contains:
