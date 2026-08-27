@@ -26,7 +26,7 @@ Crew Repository now has an explicit read-only data boundary:
 
 - `scripts/sync_crew_repository.py` calls Monday server-side using `MONDAY_API_TOKEN`, requests only the approved Crew Repository fields, normalizes records by Monday item/user IDs, validates counts and team assignments, and writes `data/crew_repository.snapshot.json`.
 - `scripts/validate_crew_snapshot.py` validates a snapshot without contacting Monday.
-- `scripts/portal_server.py` serves the portal and protected `/api/crew`; direct `/data` access is blocked. Production requires `PORTAL_API_TOKEN`; local-only testing can use `PORTAL_DEV_ALLOW_LOCAL=1` on loopback.
+- `scripts/portal_server.py` serves the portal and authenticated read-only normalized endpoints: `/api/crew`, `/api/activity`, `/api/flight`, `/api/site-activities`, `/api/processing-qa`, `/api/report-submission`, `/api/work-tracker`, `/api/inventory`, and `/api/incidents`. Direct `/data` access is blocked. Missing or invalid snapshots return `503` with `data_state: unavailable`. Production requires `PORTAL_API_TOKEN`; local-only testing can use `PORTAL_DEV_ALLOW_LOCAL=1` on loopback. Google Workspace manager authentication and production deployment remain pending.
 - The Crew Management view loads `/api/crew` and fails closed with `no fallback data loaded` if it cannot load; it does not silently use a second roster fixture.
 
 Run the connector only in a trusted server/runtime:

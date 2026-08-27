@@ -12,7 +12,17 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SNAPSHOT = ROOT / "data" / "crew_repository.snapshot.json"
+SNAPSHOTS = {
+    "/api/crew": ROOT / "data" / "crew_repository.snapshot.json",
+    "/api/activity": ROOT / "data" / "activity_repository.snapshot.json",
+    "/api/flight": ROOT / "data" / "flight_operations.snapshot.json",
+    "/api/site-activities": ROOT / "data" / "site_activities.snapshot.json",
+    "/api/processing-qa": ROOT / "data" / "processing_qa.snapshot.json",
+    "/api/report-submission": ROOT / "data" / "report_submission.snapshot.json",
+    "/api/work-tracker": ROOT / "data" / "work_tracker.snapshot.json",
+    "/api/inventory": ROOT / "data" / "inventory.snapshot.json",
+    "/api/incidents": ROOT / "data" / "incident_logs.snapshot.json",
+}
 TOKEN = os.environ.get("PORTAL_API_TOKEN")
 DEV_LOCAL = os.environ.get("PORTAL_DEV_ALLOW_LOCAL") == "1"
 
@@ -37,17 +47,22 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(payload)
 
     def do_GET(self) -> None:
-        if self.path == "/api/crew":
+        if self.path in SNAPSHOTS:
             if not self._authorized():
                 self._json(401, {"error": "unauthorized"})
                 return
-            if not SNAPSHOT.exists():
-                self._json(503, {"error": "crew snapshot unavailable"})
+            snapshot = SNAPSHOTS[self.path]
+            if not snapshot.exists():
+                self._json(503, {"error": "snapshot unavailable", "endpoint": self.path, "data_state": "unavailable"})
                 return
             try:
-                self._json(200, json.loads(SNAPSHOT.read_text()))
+                body = json.loads(snapshot.read_text())
+                if not isinstance(body, dict) or not body.get("schema_version") or not isinstance(body.get("records"), list):
+                    self._json(503, {"error": "snapshot invalid", "endpoint": self.path, "data_state": "unavailable"})
+                    return
+                self._json(200, body)
             except (OSError, json.JSONDecodeError):
-                self._json(503, {"error": "crew snapshot invalid"})
+                self._json(503, {"error": "snapshot invalid", "endpoint": self.path, "data_state": "unavailable"})
             return
         if self.path.startswith("/data/"):
             self._json(404, {"error": "direct data access disabled"})
