@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import json
 import os
+import time
+from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from portal_metrics import build_metrics
@@ -26,6 +28,20 @@ SNAPSHOTS = {
 }
 TOKEN = os.environ.get("PORTAL_API_TOKEN")
 DEV_LOCAL = os.environ.get("PORTAL_DEV_ALLOW_LOCAL") == "1"
+MAX_AGE_SECONDS = int(os.environ.get("PORTAL_SNAPSHOT_MAX_AGE_SECONDS", "86400"))
+
+
+def snapshot_state(snapshot: Path) -> tuple[str, str | None]:
+    if not snapshot.exists():
+        return "unavailable", None
+    try:
+        body = json.loads(snapshot.read_text())
+        if not isinstance(body, dict) or not body.get("schema_version") or not isinstance(body.get("records"), list):
+            return "needs_review", None
+        age = max(0, time.time() - snapshot.stat().st_mtime)
+        return ("stale" if age > MAX_AGE_SECONDS else "current"), datetime.fromtimestamp(snapshot.stat().st_mtime, timezone.utc).isoformat()
+    except (OSError, json.JSONDecodeError, ValueError):
+        return "needs_review", None
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -63,28 +79,34 @@ class Handler(SimpleHTTPRequestHandler):
         if self.path == "/api/public-status":
             sources = {}
             for endpoint, snapshot in SNAPSHOTS.items():
+                state, updated_at = snapshot_state(snapshot)
                 sources[endpoint.removeprefix("/api/")] = {
-                    "state": "current" if snapshot.exists() else "unavailable",
+                    "state": state,
                     "schema_version": self._snapshot_schema(snapshot),
+                    "updated_at": updated_at,
                 }
-            self._json(200, {"data_state": "current" if sources and all(v["state"] == "current" for v in sources.values()) else "unavailable", "sources": sources})
+            overall = "current" if sources and all(v["state"] == "current" for v in sources.values()) else ("needs_review" if any(v["state"] == "needs_review" for v in sources.values()) else ("stale" if any(v["state"] == "stale" for v in sources.values()) else "unavailable"))
+            self._json(200, {"data_state": overall, "sources": sources})
             return
         if self.path in SNAPSHOTS:
             if not self._authorized():
                 self._json(401, {"error": "unauthorized"})
                 return
             snapshot = SNAPSHOTS[self.path]
-            if not snapshot.exists():
-                self._json(503, {"error": "snapshot unavailable", "endpoint": self.path, "data_state": "unavailable"})
+            state, updated_at = snapshot_state(snapshot)
+            if state == "unavailable":
+                self._json(503, {"error": "snapshot unavailable", "endpoint": self.path, "data_state": state})
+                return
+            if state == "needs_review":
+                self._json(503, {"error": "snapshot invalid", "endpoint": self.path, "data_state": state})
                 return
             try:
                 body = json.loads(snapshot.read_text())
-                if not isinstance(body, dict) or not body.get("schema_version") or not isinstance(body.get("records"), list):
-                    self._json(503, {"error": "snapshot invalid", "endpoint": self.path, "data_state": "unavailable"})
-                    return
+                body["data_state"] = state
+                body["snapshot_updated_at"] = updated_at
                 self._json(200, body)
-            except (OSError, json.JSONDecodeError):
-                self._json(503, {"error": "snapshot invalid", "endpoint": self.path, "data_state": "unavailable"})
+            except (OSError, json.JSONDecodeError, TypeError):
+                self._json(503, {"error": "snapshot invalid", "endpoint": self.path, "data_state": "needs_review"})
             return
         if self.path.startswith("/data/"):
             self._json(404, {"error": "direct data access disabled"})
