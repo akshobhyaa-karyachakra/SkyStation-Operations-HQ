@@ -1,0 +1,20 @@
+# SkyStation Operations HQ
+
+## Purpose
+
+SkyStation Operations HQ is Skylark Drones' operations intelligence portal for delivery, fleet readiness, reporting, crew capacity, analytics, billing evidence, and MIS.
+
+## Public boundary
+
+- `index.html` is the protected production portal shell. It must fail closed when authentication, authorization, backend configuration, or current source snapshots are unavailable.
+- `design-preview.html` is an authentication-free, synthetic-only visual preview. Its people, customers, sites, assets, counts, percentages, and amounts are fictional.
+- Do not infer live operational facts from the synthetic preview.
+- Public dashboard projections must exclude confidential billing amounts, employee-level sensitive details, and internal Monday snapshots.
+
+## Navigation
+
+The portal contains Central Dashboard, Activity Tracking, Inventory, Crew Management, Analytics, Billing, and MIS modules. Display Mode rotates only the six Central Dashboard sheets; Deep Dive modules remain manually navigated.
+
+## Source and data state
+
+Production data is read-only from approved Monday boards through the protected backend. Missing, stale, invalid, or unconfigured sources are surfaced as explicit unavailable or review states; the frontend must never substitute demo fixtures for missing production data.
