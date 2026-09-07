@@ -4,7 +4,7 @@
 
 **Goal:** Build a high-signal Analytics module in the synthetic SkyStation Operations HQ preview that explains delivery performance, recurring coverage, delay causes, workload, asset readiness, and exception ageing, with every visual leading to an evidence queue.
 
-**Architecture:** Add Analytics as a dedicated route in `rebuild-preview.html`, using one canonical synthetic analytics fixture and one view controller for Daily, Weekly, and Monthly states. Keep the module visually distinct from Activity, Inventory, and Crew: Analytics is an investigation surface built around a dominant performance narrative, diagnostic visual layers, and a right-side action queue. Keep `index.html` untouched and preserve the explicit `SYNTHETIC DEMO` / `NO AUTHENTICATION` boundary.
+**Architecture:** Add Analytics as a dedicated route in `rebuild-preview.html`, using one canonical synthetic analytics fixture and one view controller for Daily, Weekly, and Monthly states. Keep the module visually distinct from Activity, Inventory, and Crew: Analytics is a chart-led investigation workspace with a visual canvas, coordinated selections, and an evidence queue—not a card grid with charts attached. Use lightweight SVG/CSS primitives so the preview remains self-contained, performant, and inspectable. Keep `index.html` untouched and preserve the explicit `SYNTHETIC DEMO` / `NO AUTHENTICATION` boundary.
 
 **Tech Stack:** Self-contained HTML/CSS/JavaScript, existing Skylark Mission Control tokens, inline SVG/CSS visual primitives, Playwright/Chromium browser QA, GitHub Pages hosted verification.
 
@@ -38,15 +38,31 @@ Do not build:
 
 ## Visual direction
 
-Use a **Flight Path Investigation** composition:
+Use a **Flight Path Investigation** composition. The page should read as a coordinated chart system first and an evidence register second:
 
 - Dark command surface with one dominant orange planned-versus-completed trajectory.
 - Quiet survey-grid and route-line cues inside charts only.
 - Teal for healthy/current, amber for review/follow-up, red for exception/decline, slate for unknown/future, and orange for primary focus.
 - Raleway for display headings; Avenir/Avenir Next for UI and evidence text; monospace only for period/source readouts.
-- First viewport: one management statement, dominant trend, and a compact ranked queue. Supporting analyses sit below in an intentional diagnostic sequence.
-- No nested card wall. Use a wide hero analysis, compact diagnostic strips, one heatmap, and one evidence table/queue.
+- First viewport: one management statement, a large chart canvas, and a narrow investigation rail. Supporting charts continue below in a deliberate visual sequence.
+- Avoid equal-weight KPI cards. Numbers should annotate charts, not replace them.
+- Use coordinated highlighting: selecting a heatmap cell, Sankey node, trend point, or matrix cell highlights the same scope in the other charts and filters the evidence queue.
 
+### World-class chart set
+
+The first Analytics slice should include these chart types, chosen because each answers a different operational question:
+
+1. **Execution trajectory:** a layered planned-versus-completed line/area chart with gap band, event markers, selected-period callout, and exact counts. This answers when delivery diverged.
+2. **GitHub-style activity heatmap:** a contribution-grid calendar showing execution density and completion quality by day. Cells distinguish empty, no data, incomplete, and completed activity; clicking a cell filters the queue.
+3. **Handoff Sankey:** a left-to-right flow from planned activity → field execution → processing/QA → report submission → client-ready. Link width represents item count, and drop-offs visibly terminate in labelled exception nodes rather than disappearing.
+4. **Delay composition treemap:** rectangles sized by delayed-item count and coloured by cause/state, with a breadcrumb-style selected cause. This answers what consumes attention.
+5. **Small-multiple trend lanes:** one compact sparkline per customer/site with planned, completed, and carry-forward marks. This reveals whether the aggregate trend hides a local problem.
+6. **Coverage calendar/radial strip:** expected recurring cadence against observed records, with missing cadence windows shown as gaps instead of zeros.
+7. **Workload constellation:** a bounded bubble or dot plot using assigned work on one axis and overdue/evidence gaps on the other; use team/customer-site aggregation by default and never rank individual human value.
+8. **Readiness matrix:** upcoming activity on one axis and asset readiness components on the other—ready, maintenance, unassigned, relation review—so a readiness percentage has visible causes.
+9. **Exception ageing bands:** horizontal age distribution for delivery, handoff, source-quality, and asset exceptions, with counts and oldest item visible.
+
+Not every chart must appear in every period view. Daily should emphasize the heatmap, trajectory, Sankey, and ageing; Weekly should add site small multiples and delay composition; Monthly should emphasize recurring coverage, workload, readiness, and trend lanes. All views keep the same interaction vocabulary and evidence queue.
 ---
 
 ## Implementation tasks
@@ -150,31 +166,35 @@ const analyticsFixture = {
 
 **Verification:** Changing period changes the chart series, totals, callout, and queue; it does not only change the active tab styling.
 
-### Task 5: Add the diagnostic layer
+### Task 5: Add the chart-led diagnostic layer
 
-**Objective:** Explain where and why the performance changed.
+**Objective:** Build a coordinated visual system that explains where and why performance changed.
 
 **Files:**
 - Modify: `rebuild-preview.html` Analytics markup, CSS, and controller.
 
-**Visuals:**
+**Required chart primitives:**
 
-1. **Execution heatmap:** team/customer-site by weekday or period bucket; cells show count and state.
-2. **Delay causes:** horizontal bars with count and share, not share alone.
-3. **Handoff funnel:** Activity Repository → Flight Operations → Processing/QA → Report Submission → client-ready, with drop-off counts.
-4. **Recurring coverage:** expected cadence versus found records, with missing/extra evidence states.
-5. **Owner workload:** assigned, active, overdue, and unassigned work; no performance ranking.
-6. **Asset readiness:** upcoming activity matched against ready/maintenance/relation-review assets.
+1. **GitHub-style activity heatmap:** contribution-grid cells with weekday labels, month boundaries, exact counts, keyboard focus, and explicit empty/no-data states.
+2. **Sankey flow:** SVG nodes and proportional links for the handoff chain. Links must preserve counts and terminate in visible drop-off/exception nodes.
+3. **Delay treemap:** nested rectangles sized by count with accessible labels and selected-cause state.
+4. **Small-multiple sparklines:** repeated customer/site lanes sharing a common scale and period context.
+5. **Coverage calendar/radial strip:** expected cadence and observed evidence shown as aligned marks and gaps.
+6. **Workload constellation:** aggregated dots/bubbles with axes and labels, never an unqualified ranking.
+7. **Readiness matrix:** activity-by-asset state grid with component-level legend.
+8. **Ageing bands:** horizontal intervals grouped by exception family and age range.
 
 **Steps:**
 
 1. Give each visual a one-sentence interpretation generated from fixture values.
 2. Add legends with exact counts and state labels.
-3. Use a consistent chart-click target model: clicking a mark sets the evidence queue filter.
-4. Keep `Needs review` and `No data` visually distinct from zero.
+3. Use a consistent chart-click target model: clicking a mark sets the evidence queue filter and highlights the same scope elsewhere where meaningful.
+4. Keep `Needs review`, `No data`, `Not synced`, and `Needs confirmation` visually distinct from zero.
 5. Use compact source labels such as `Synthetic activity register`, `Synthetic handoff register`, and `Synthetic fleet snapshot`.
+6. Add chart titles that state the question, such as `Where did work fall out of the handoff?` rather than generic labels like `Sankey chart`.
+7. Keep SVG dimensions responsive through `viewBox`; do not use canvas-only visuals that cannot expose labels or keyboard focus in the preview.
 
-**Verification:** Each visual can be interacted with or focused by keyboard, changes the queue context, and preserves the selected period.
+**Verification:** Each visual can be interacted with or focused by keyboard, changes the queue context, preserves the selected period, and renders meaningful labels at 1920×1080 and 390px.
 
 ### Task 6: Build the evidence queue and drill-down behavior
 
