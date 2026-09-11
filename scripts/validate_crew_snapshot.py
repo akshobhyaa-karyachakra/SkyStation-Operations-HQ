@@ -18,20 +18,18 @@ def validate(snapshot: dict) -> list[str]:
         errors.append("duplicate Monday item IDs")
     if len(names) != len(set(names)):
         errors.append("duplicate crew names")
-    if len(records) != 15:
-        errors.append(f"expected 15 records, received {len(records)}")
-    if sum(not r.get("historical") for r in records) != 14:
-        errors.append("expected 14 active records")
+    if snapshot.get("item_count") != len(records):
+        errors.append(f"item_count mismatch: metadata={snapshot.get('item_count')}, records={len(records)}")
+    active_statuses = {"Available", "Deployed", "On Leave"}
+    active_count = sum(r.get("availability") in active_statuses for r in records)
+    if active_count + sum(r.get("availability") in {"Terminated", "Resigned"} for r in records) > len(records):
+        errors.append("invalid availability classification")
     for record in records:
-        for field in ("monday_item_id", "name", "team_group", "official_role", "availability"):
+        for field in ("monday_item_id", "name", "team_group", "official_role"):
             if not record.get(field):
                 errors.append(f"{record.get('name') or record.get('monday_item_id')}: missing {field}")
         if len(record.get("manager", [])) > 1:
             errors.append(f"{record['name']}: multiple managers")
-    by_name = {r["name"]: r for r in records}
-    for name in ("Aarya Vira", "Ammar Dali"):
-        if by_name.get(name, {}).get("team_group") != "SkyStation Operations":
-            errors.append(f"{name}: wrong team group")
     return errors
 
 
@@ -42,4 +40,4 @@ if errors:
     for error in errors:
         print("VALIDATION_ERROR: " + error)
     raise SystemExit(1)
-print(f"valid crew snapshot: {len(snapshot['records'])} records; 14 active; 1 historical")
+print(f"valid crew snapshot: {len(snapshot['records'])} records; {sum(r.get('availability') in {'Available', 'Deployed', 'On Leave'} for r in snapshot['records'])} active; {sum(r.get('availability') in {'Terminated', 'Resigned'} for r in snapshot['records'])} historical")

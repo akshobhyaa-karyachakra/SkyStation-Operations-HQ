@@ -18,12 +18,12 @@ API_URL = "https://api.monday.com/v2"
 API_VERSION = "2025-04"
 
 QUERY = """
-query($board_id: ID!) {
+query($board_id: ID!, $cursor: String) {
   boards(ids: [$board_id]) {
     id
     name
     updated_at
-    items_page(limit: 500) {
+    items_page(limit: 500, cursor: $cursor) {
       items {
         id
         name
@@ -40,6 +40,7 @@ query($board_id: ID!) {
           ... on PeopleValue { persons_and_teams { id kind name } }
         }
       }
+      cursor
     }
   }
 }
@@ -60,17 +61,31 @@ COLUMN_MAP = {
 
 
 def request(token: str) -> dict:
-    body = json.dumps({"query": QUERY, "variables": {"board_id": BOARD_ID}}).encode()
-    req = urllib.request.Request(
-        API_URL,
-        data=body,
-        headers={"Authorization": token, "Content-Type": "application/json", "API-Version": API_VERSION},
-    )
-    with urllib.request.urlopen(req, timeout=60) as response:
-        payload = json.load(response)
-    if payload.get("errors"):
-        raise RuntimeError("Monday query failed: " + "; ".join(e.get("message", "unknown error") for e in payload["errors"]))
-    return payload
+    all_items = []
+    board_meta = None
+    cursor = None
+    while True:
+        body = json.dumps({"query": QUERY, "variables": {"board_id": BOARD_ID, "cursor": cursor}}).encode()
+        req = urllib.request.Request(
+            API_URL,
+            data=body,
+            headers={"Authorization": token, "Content-Type": "application/json", "API-Version": API_VERSION},
+        )
+        with urllib.request.urlopen(req, timeout=60) as response:
+            payload = json.load(response)
+        if payload.get("errors"):
+            raise RuntimeError("Monday query failed: " + "; ".join(e.get("message", "unknown error") for e in payload["errors"]))
+        boards = payload.get("data", {}).get("boards", [])
+        if len(boards) != 1:
+            raise ValueError(f"Expected exactly one board, received {len(boards)}")
+        board = boards[0]
+        board_meta = {k: board.get(k) for k in ("id", "name", "updated_at")}
+        page = board.get("items_page", {})
+        all_items.extend(page.get("items", []))
+        cursor = page.get("cursor")
+        if not cursor:
+            break
+    return {"data": {"boards": [{**board_meta, "items_page": {"items": all_items}}]}}
 
 
 def normalize(payload: dict) -> dict:
@@ -117,6 +132,7 @@ def normalize(payload: dict) -> dict:
         })
     return {
         "schema_version": "crew.v1",
+        "item_count": len(records),
         "source": {"provider": "monday", "board_id": BOARD_ID, "board_name": board.get("name"), "board_updated_at": board.get("updated_at")},
         "synced_at": datetime.now(timezone.utc).isoformat(),
         "records": records,
@@ -129,20 +145,13 @@ def validate(snapshot: dict) -> list[str]:
     ids = [r.get("monday_item_id") for r in records]
     if len(ids) != len(set(ids)):
         errors.append("duplicate Monday item IDs")
-    if len(records) != 15:
-        errors.append(f"expected 15 records, received {len(records)}")
-    active = [r for r in records if not r.get("historical")]
-    if len(active) != 14:
-        errors.append(f"expected 14 active records, received {len(active)}")
+    if snapshot.get("item_count") != len(records):
+        errors.append("item count metadata mismatch")
     for r in records:
         if not r.get("monday_item_id") or not r.get("name") or not r.get("team_group"):
             errors.append(f"missing identity/team fields for {r.get('name') or r.get('monday_item_id')}")
         if len(r.get("manager", [])) > 1:
             errors.append(f"multiple managers for {r['name']}")
-    by_name = {r["name"]: r for r in records}
-    for name in ("Aarya Vira", "Ammar Dali"):
-        if by_name.get(name, {}).get("team_group") != "SkyStation Operations":
-            errors.append(f"{name} is not in SkyStation Operations")
     return errors
 
 

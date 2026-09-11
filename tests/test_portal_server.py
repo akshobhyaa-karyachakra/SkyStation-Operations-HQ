@@ -21,7 +21,13 @@ def protected_server(tmp_path, monkeypatch):
         "item_count": 1,
         "records": [{"source_item_id": "1", "data_state": "current"}],
     }))
-    monkeypatch.setattr(portal_server, "SNAPSHOTS", {"/api/inventory": snapshot})
+    crew_snapshot = tmp_path / "crew_repository.snapshot.json"
+    crew_snapshot.write_text(json.dumps({
+        "schema_version": "crew.v1",
+        "item_count": 1,
+        "records": [{"monday_item_id": "1", "name": "Example Person", "availability": "Available"}],
+    }))
+    monkeypatch.setattr(portal_server, "SNAPSHOTS", {"/api/inventory": snapshot, "/api/crew": crew_snapshot})
     monkeypatch.setattr(portal_server, "TOKEN", "test-token")
     monkeypatch.setattr(portal_server, "DEV_LOCAL", False)
     monkeypatch.setattr(portal_server, "MAX_AGE_SECONDS", 86400)
@@ -71,5 +77,38 @@ def test_invalid_snapshot_fails_closed(protected_server):
 def test_direct_snapshot_access_is_blocked(protected_server):
     server, _, _ = protected_server
     status, body = request(server, "/data/inventory.snapshot.json")
+    assert status == 404
+    assert body["error"] == "direct data access disabled"
+
+
+def test_crew_requires_authentication(protected_server):
+    server, _, _ = protected_server
+    status, body = request(server, "/api/crew")
+    assert status == 401
+    assert body == {"error": "unauthorized"}
+
+
+def test_crew_authorized_response_has_protected_schema(protected_server):
+    server, _, _ = protected_server
+    status, body = request(server, "/api/crew", {"Authorization": "Bearer test-token"})
+    assert status == 200
+    assert body["schema_version"] == "crew.v1"
+    assert body["data_state"] == "current"
+    assert body["item_count"] == 1
+    assert body["records"][0]["monday_item_id"] == "1"
+
+
+def test_crew_invalid_snapshot_fails_closed(protected_server):
+    server, _, portal_server = protected_server
+    crew_snapshot = portal_server.SNAPSHOTS["/api/crew"]
+    crew_snapshot.write_text("not-json")
+    status, body = request(server, "/api/crew", {"Authorization": "Bearer test-token"})
+    assert status == 503
+    assert body["data_state"] == "needs_review"
+
+
+def test_crew_direct_snapshot_access_is_blocked(protected_server):
+    server, _, _ = protected_server
+    status, body = request(server, "/data/crew_repository.snapshot.json")
     assert status == 404
     assert body["error"] == "direct data access disabled"
