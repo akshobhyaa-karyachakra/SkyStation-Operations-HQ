@@ -6,9 +6,12 @@ PORTAL_DEV_ALLOW_LOCAL=1; this is accepted only on loopback requests.
 """
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 import os
 import time
+import uuid
 from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -29,6 +32,39 @@ SNAPSHOTS = {
 TOKEN = os.environ.get("PORTAL_API_TOKEN")
 DEV_LOCAL = os.environ.get("PORTAL_DEV_ALLOW_LOCAL") == "1"
 MAX_AGE_SECONDS = int(os.environ.get("PORTAL_SNAPSHOT_MAX_AGE_SECONDS", "86400"))
+CREW_PORTAL_STORE = Path(os.environ.get("CREW_PORTAL_STORE", ROOT / "data" / "crew_portal.records.json"))
+CREW_PORTAL_FILES = Path(os.environ.get("CREW_PORTAL_FILES", ROOT / "data" / "crew-1to1-files"))
+CREW_SCORE_VALUES = {"Needs improvement", "Developing", "Meets expectations", "Exceeds expectations"}
+MAX_PORTAL_BODY = 12 * 1024 * 1024
+
+
+def _empty_crew_portal() -> dict:
+    return {"schema_version": "crew_portal.v1", "responsibilities": [], "performance": [], "edit_requests": [], "one_to_ones": [], "audit": []}
+
+
+def _load_crew_portal() -> dict:
+    if not CREW_PORTAL_STORE.exists():
+        return _empty_crew_portal()
+    try:
+        body = json.loads(CREW_PORTAL_STORE.read_text())
+        if body.get("schema_version") != "crew_portal.v1":
+            raise ValueError("unsupported crew portal schema")
+        return body
+    except (OSError, json.JSONDecodeError, ValueError):
+        raise ValueError("crew portal store unavailable")
+
+
+def _save_crew_portal(body: dict) -> None:
+    CREW_PORTAL_STORE.parent.mkdir(parents=True, exist_ok=True)
+    temp = CREW_PORTAL_STORE.with_suffix(CREW_PORTAL_STORE.suffix + ".tmp")
+    temp.write_text(json.dumps(body, indent=2) + "\n")
+    temp.replace(CREW_PORTAL_STORE)
+
+
+def _audit(body: dict, action: str, actor: str, entity_id: str) -> dict:
+    entry = {"audit_id": str(uuid.uuid4()), "action": action, "actor": actor, "entity_id": entity_id, "timestamp": datetime.now(timezone.utc).isoformat()}
+    body["audit"].append(entry)
+    return entry
 
 
 def snapshot_state(snapshot: Path) -> tuple[str, str | None]:
@@ -63,7 +99,84 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
 
+    def do_POST(self) -> None:
+        if not self.path.startswith("/api/crew-portal/"):
+            self._json(404, {"error": "not found"})
+            return
+        if not self._authorized():
+            self._json(401, {"error": "unauthorized"})
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            if length <= 0 or length > MAX_PORTAL_BODY:
+                self._json(413, {"error": "request too large or empty"})
+                return
+            raw = self.rfile.read(length)
+            if self.headers.get("Content-Type", "").split(";", 1)[0] != "application/json":
+                self._json(415, {"error": "application/json required"})
+                return
+            payload = json.loads(raw)
+            body = _load_crew_portal()
+            actor = self.headers.get("X-Portal-Actor-Id", "authenticated-user")
+            now = datetime.now(timezone.utc).isoformat()
+            if self.path == "/api/crew-portal/performance":
+                if payload.get("score") not in CREW_SCORE_VALUES:
+                    self._json(400, {"error": "invalid score", "allowed": sorted(CREW_SCORE_VALUES)})
+                    return
+                if not payload.get("person_id") or not payload.get("period"):
+                    self._json(400, {"error": "person_id and period are required"})
+                    return
+                record = {"id": str(uuid.uuid4()), "person_id": str(payload["person_id"]), "period": payload["period"], "score": payload["score"], "goals": payload.get("goals", ""), "evidence": payload.get("evidence", []), "manager_review": payload.get("manager_review", "Pending"), "employee_acknowledged": bool(payload.get("employee_acknowledged", False)), "created_at": now, "created_by": actor, "status": "Open"}
+                body["performance"].append(record)
+                audit = _audit(body, "performance_created", actor, record["id"])
+            elif self.path == "/api/crew-portal/responsibilities":
+                if not payload.get("person_id") or not payload.get("title"):
+                    self._json(400, {"error": "person_id and title are required"})
+                    return
+                record = {"id": str(uuid.uuid4()), "person_id": str(payload["person_id"]), "title": payload["title"], "scope": payload.get("scope", ""), "effective_date": payload.get("effective_date"), "status": payload.get("status", "Active"), "version": 1, "created_at": now, "created_by": actor}
+                body["responsibilities"].append(record)
+                audit = _audit(body, "responsibility_created", actor, record["id"])
+            elif self.path == "/api/crew-portal/requests":
+                if not payload.get("person_id") or not payload.get("requested_change"):
+                    self._json(400, {"error": "person_id and requested_change are required"})
+                    return
+                request_type = payload.get("request_type", "responsibility_edit")
+                record = {"id": str(uuid.uuid4()), "person_id": str(payload["person_id"]), "request_type": request_type, "requested_change": payload["requested_change"], "reason": payload.get("reason", ""), "status": "Pending", "created_at": now, "created_by": actor}
+                body["edit_requests"].append(record)
+                audit = _audit(body, "responsibility_edit_requested" if request_type == "responsibility_edit" else "crew_edit_requested", actor, record["id"])
+            elif self.path == "/api/crew-portal/one-to-ones":
+                if not payload.get("person_id") or not payload.get("meeting_month") or not payload.get("filename") or not payload.get("content_base64"):
+                    self._json(400, {"error": "person_id, meeting_month, filename, and content_base64 are required"})
+                    return
+                content = base64.b64decode(payload["content_base64"], validate=True)
+                if not content.startswith(b"%PDF-") or len(content) > 10 * 1024 * 1024:
+                    self._json(400, {"error": "invalid PDF file"})
+                    return
+                version = 1 + sum(1 for r in body["one_to_ones"] if r.get("person_id") == str(payload["person_id"]) and r.get("meeting_month") == payload["meeting_month"])
+                file_id = str(uuid.uuid4())
+                CREW_PORTAL_FILES.mkdir(parents=True, exist_ok=True)
+                (CREW_PORTAL_FILES / f"{file_id}.pdf").write_bytes(content)
+                record = {"id": file_id, "person_id": str(payload["person_id"]), "meeting_month": payload["meeting_month"], "filename": payload["filename"], "version": version, "upload_status": "Stored", "storage_key": f"{file_id}.pdf", "uploaded_at": now, "uploaded_by": actor}
+                body["one_to_ones"].append(record)
+                audit = _audit(body, "one_to_one_uploaded", actor, record["id"])
+            else:
+                self._json(404, {"error": "not found"})
+                return
+            _save_crew_portal(body)
+            self._json(201, {"record": record, "audit": audit})
+        except (ValueError, json.JSONDecodeError, OSError, binascii.Error):
+            self._json(503, {"error": "crew portal storage unavailable", "data_state": "needs_review"})
+
     def do_GET(self) -> None:
+        if self.path == "/api/crew-portal":
+            if not self._authorized():
+                self._json(401, {"error": "unauthorized"})
+                return
+            try:
+                self._json(200, _load_crew_portal())
+            except ValueError:
+                self._json(503, {"error": "crew portal store unavailable", "data_state": "needs_review"})
+            return
         if self.path == "/api/metrics":
             if not self._authorized():
                 self._json(401, {"error": "unauthorized"})
