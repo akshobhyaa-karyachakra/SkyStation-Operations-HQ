@@ -135,6 +135,7 @@ def validate(snapshot: dict) -> list[str]:
     # Item count is source data, not a permanent schema constant. Validate the
     # fetched count through snapshot metadata/readback, while allowing the
     # inventory to grow or shrink without rejecting an otherwise valid sync.
+    if snapshot.get("item_count", len(records)) != len(records): errors.append("item count metadata mismatch")
     if len(ids) != len(set(ids)): errors.append("duplicate source item IDs")
     for record in records:
         if any(r.get("board_id") != CUSTOMER_BOARD_ID for r in record.get("customer_relations", [])): errors.append("customer relation target mismatch")

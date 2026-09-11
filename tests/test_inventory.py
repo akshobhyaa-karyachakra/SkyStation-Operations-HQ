@@ -39,6 +39,16 @@ class InventoryContractTests(unittest.TestCase):
         self.assertIn("missing_asset_type", rec["validation_issues"])
         self.assertIn("missing_serial_or_unit_identifier", rec["validation_issues"])
 
+    def test_missing_condition_and_pending_values_are_review(self):
+        item = {"id": "1", "name": "pending", "column_values": [
+            col("text_mm2qw26e", "Battery"), col("text_mm3rb17h", "Serial pending - site allocation"),
+            col("location_mm2qk3qr", "location pending")
+        ]}
+        rec = module.normalize({}, [item])["records"][0]
+        self.assertIn("missing_condition", rec["validation_issues"])
+        self.assertIn("serial_pending_source_detail", rec["validation_issues"])
+        self.assertIn("location_pending_source_detail", rec["validation_issues"])
+
     def test_wrong_relation_target_is_review(self):
         item = {"id": "1", "name": "x", "column_values": [col("text_mm2qw26e", "Drone"), col("text_mm3rb17h", "SN"),
             col("board_relation_mm2qgehm", linked_items=[{"id": "9", "board": {"id": "999"}}])]}
@@ -46,8 +56,12 @@ class InventoryContractTests(unittest.TestCase):
         self.assertIn("unexpected_customer_relation_target", rec["validation_issues"])
 
     def test_live_snapshot_count_validator(self):
-        records = [{"source_item_id": str(i)} for i in range(121)]
-        self.assertEqual(module.validate({"schema_version": "inventory_asset.v1", "records": records}), [])
+        records = [{"source_item_id": str(i)} for i in range(132)]
+        self.assertEqual(module.validate({"schema_version": "inventory_asset.v1", "item_count": 132, "records": records}), [])
+
+    def test_snapshot_count_metadata_mismatch_is_invalid(self):
+        records = [{"source_item_id": "1"}]
+        self.assertIn("item count metadata mismatch", module.validate({"schema_version": "inventory_asset.v1", "item_count": 2, "records": records}))
 
 
 if __name__ == "__main__":
