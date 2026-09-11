@@ -59,6 +59,14 @@ button:focus-visible,select:focus-visible,input:focus-visible,[role="button"]:fo
 *{scrollbar-color:#41525c #101820;scrollbar-width:thin}
 @media(prefers-reduced-motion:reduce){.mis-button,.billing-clear,.inventory-tabs button,.crew-switch button{transition:none!important}}
 </style><style id="brand-mark-asset">.brand .mark{width:46px;height:46px;border:0;border-radius:8px;transform:none;object-fit:contain;display:block;filter:drop-shadow(0 3px 5px #0007)}
+</style><style id="activity-responsive-grid">
+#activityView .signal-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;align-items:stretch}
+#activityView .signal{min-width:0;display:flex;flex-direction:column;justify-content:flex-start}
+#activityView .signal strong{overflow-wrap:anywhere}
+#activityView .signal small{line-height:1.35}
+@media(max-width:1120px){#activityView .signal-grid{grid-template-columns:repeat(3,minmax(0,1fr))}#activityView .signal.feature{grid-column:span 1}}
+@media(max-width:720px){#activityView .signal-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#activityView .signal.feature{grid-column:1/-1}}
+@media(max-width:480px){#activityView .signal-grid{grid-template-columns:1fr}#activityView .signal.feature{grid-column:auto}}
 </style></head>
 <body>
 <div class="app">
