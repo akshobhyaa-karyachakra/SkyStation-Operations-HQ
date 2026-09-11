@@ -21,6 +21,14 @@ def build_metrics(snapshots: dict[str, dict | None]) -> dict[str, Any]:
     reports = _records(snapshots.get("report_submission"))
     inventory = _records(snapshots.get("inventory"))
     incidents = _records(snapshots.get("incidents"))
+    inventory_condition = Counter(r.get("condition") or "Condition not provided" for r in inventory)
+    inventory_types = Counter(r.get("asset_type") or "Type not provided" for r in inventory)
+    inventory_pending = {
+        "condition_not_provided": sum(not r.get("condition") for r in inventory),
+        "type_not_provided": sum(not r.get("asset_type") for r in inventory),
+        "serial_not_provided": sum(not r.get("serial_or_unit_id") for r in inventory),
+        "location_not_provided": sum(not r.get("location") for r in inventory),
+    }
     return {
         "schema_version": "portal_metrics.v1",
         "data_state": _state(snapshots),
@@ -33,6 +41,12 @@ def build_metrics(snapshots: dict[str, dict | None]) -> dict[str, Any]:
             "report_items": len(reports),
             "reports_with_links": sum(bool(r.get("report_link")) for r in reports),
         },
-        "inventory": {"assets": len(inventory), "needs_review": sum(r.get("data_state") == "needs_review" for r in inventory)},
+        "inventory": {
+            "assets": len(inventory),
+            "needs_review": sum(r.get("data_state") == "needs_review" for r in inventory),
+            "condition_counts": dict(inventory_condition),
+            "type_counts": dict(inventory_types),
+            "pending_fields": inventory_pending,
+        },
         "incidents": {"total": len(incidents), "open": sum((r.get("status") or "").lower() not in {"closed", "resolved"} for r in incidents)},
     }
