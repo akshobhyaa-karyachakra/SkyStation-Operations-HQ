@@ -39,7 +39,7 @@ MAX_PORTAL_BODY = 12 * 1024 * 1024
 
 
 def _empty_crew_portal() -> dict:
-    return {"schema_version": "crew_portal.v1", "responsibilities": [], "performance": [], "edit_requests": [], "one_to_ones": [], "audit": []}
+    return {"schema_version": "crew_portal.v1", "role_lenses": [], "responsibilities": [], "performance": [], "edit_requests": [], "one_to_ones": [], "audit": []}
 
 
 def _load_crew_portal() -> dict:
@@ -119,14 +119,47 @@ class Handler(SimpleHTTPRequestHandler):
             body = _load_crew_portal()
             actor = self.headers.get("X-Portal-Actor-Id", "authenticated-user")
             now = datetime.now(timezone.utc).isoformat()
-            if self.path == "/api/crew-portal/performance":
+            if self.path == "/api/crew-portal/role-lenses":
+                responsibilities = payload.get("responsibilities")
+                if not payload.get("person_id") or not payload.get("role_name") or not isinstance(responsibilities, list) or not responsibilities:
+                    self._json(400, {"error": "person_id, role_name, and responsibilities are required"})
+                    return
+                ids = [str(item.get("id", "")) for item in responsibilities]
+                total = sum(float(item.get("weight", 0)) for item in responsibilities)
+                if len(ids) != len(set(ids)) or any(not item.get("id") or not item.get("title") for item in responsibilities):
+                    self._json(400, {"error": "role lens responsibilities must have unique ids and titles"})
+                    return
+                if total != 100:
+                    self._json(400, {"error": "role lens weights must total 100"})
+                    return
+                person_id = str(payload["person_id"])
+                version = 1 + max((r.get("version", 0) for r in body.get("role_lenses", []) if r.get("person_id") == person_id), default=0)
+                record = {"id": str(uuid.uuid4()), "person_id": person_id, "role_name": payload["role_name"], "band": payload.get("band"), "responsibilities": responsibilities, "weight_total": int(total), "effective_from": payload.get("effective_from"), "version": version, "status": "Active", "created_at": now, "created_by": actor}
+                body.setdefault("role_lenses", []).append(record)
+                audit = _audit(body, "role_lens_created", actor, record["id"])
+            elif self.path == "/api/crew-portal/performance":
                 if payload.get("score") not in CREW_SCORE_VALUES:
                     self._json(400, {"error": "invalid score", "allowed": sorted(CREW_SCORE_VALUES)})
                     return
                 if not payload.get("person_id") or not payload.get("period"):
                     self._json(400, {"error": "person_id and period are required"})
                     return
-                record = {"id": str(uuid.uuid4()), "person_id": str(payload["person_id"]), "period": payload["period"], "score": payload["score"], "goals": payload.get("goals", ""), "evidence": payload.get("evidence", []), "manager_review": payload.get("manager_review", "Pending"), "employee_acknowledged": bool(payload.get("employee_acknowledged", False)), "created_at": now, "created_by": actor, "status": "Open"}
+                role_lens_id = payload.get("role_lens_id")
+                role_lens = next((r for r in body.get("role_lenses", []) if r.get("id") == role_lens_id and r.get("person_id") == str(payload["person_id"])), None) if role_lens_id else None
+                if role_lens_id and role_lens is None:
+                    self._json(400, {"error": "role_lens_id is invalid for person"})
+                    return
+                ratings = payload.get("ratings", {})
+                calculated_score = None
+                if role_lens:
+                    if not isinstance(ratings, dict) or any(float(value) < 0 or float(value) > 5 for value in ratings.values()):
+                        self._json(400, {"error": "ratings must be between 0 and 5"})
+                        return
+                    if any(item["id"] not in ratings for item in role_lens["responsibilities"]):
+                        self._json(400, {"error": "ratings are required for every role-lens responsibility"})
+                        return
+                    calculated_score = round(sum(float(item["weight"]) * float(ratings[item["id"]]) / 5 for item in role_lens["responsibilities"]), 2)
+                record = {"id": str(uuid.uuid4()), "person_id": str(payload["person_id"]), "period": payload["period"], "score": payload["score"], "role_lens_id": role_lens_id, "role_lens_version": role_lens.get("version") if role_lens else None, "ratings": ratings, "calculated_score": calculated_score, "goals": payload.get("goals", ""), "evidence": payload.get("evidence", []), "manager_review": payload.get("manager_review", "Pending"), "employee_acknowledged": bool(payload.get("employee_acknowledged", False)), "created_at": now, "created_by": actor, "status": "Open"}
                 body["performance"].append(record)
                 audit = _audit(body, "performance_created", actor, record["id"])
             elif self.path == "/api/crew-portal/responsibilities":
@@ -168,6 +201,16 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(503, {"error": "crew portal storage unavailable", "data_state": "needs_review"})
 
     def do_GET(self) -> None:
+        if self.path == "/api/crew-portal/role-lenses":
+            if not self._authorized():
+                self._json(401, {"error": "unauthorized"})
+                return
+            try:
+                body = _load_crew_portal()
+                self._json(200, {"schema_version": body["schema_version"], "role_lenses": body.get("role_lenses", [])})
+            except ValueError:
+                self._json(503, {"error": "crew portal store unavailable", "data_state": "needs_review"})
+            return
         if self.path == "/api/crew-portal":
             if not self._authorized():
                 self._json(401, {"error": "unauthorized"})

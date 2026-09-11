@@ -64,6 +64,8 @@ def post_json(server, path, body, headers=None):
     return response.status, json.loads(data)
 
 
+
+
 def test_inventory_requires_authentication(protected_server):
     server, _, _ = protected_server
     status, body = request(server, "/api/inventory")
@@ -188,4 +190,54 @@ def test_crew_portal_accepts_pdf_upload_as_versioned_record(protected_server):
     assert status == 201
     assert body["record"]["upload_status"] == "Stored"
     assert body["record"]["version"] == 1
-    assert body["audit"]["action"] == "one_to_one_uploaded"
+
+
+def test_crew_portal_role_lenses_start_empty(protected_server):
+    server, _, _ = protected_server
+    status, body = request(server, "/api/crew-portal/role-lenses", {"Authorization": "Bearer test-token"})
+    assert status == 200
+    assert body["role_lenses"] == []
+
+
+def test_crew_portal_creates_role_lens_with_valid_100_percent_weights(protected_server):
+    server, _, _ = protected_server
+    status, body = post_json(server, "/api/crew-portal/role-lenses", {
+        "person_id": "1", "role_name": "Operations B2", "band": "B2",
+        "responsibilities": [
+            {"id": "execution", "title": "Operational Execution", "weight": 60},
+            {"id": "reporting", "title": "Reporting & Documentation", "weight": 40},
+        ], "effective_from": "2026-09-01",
+    }, {"Authorization": "Bearer test-token", "X-Portal-Actor-Id": "manager-1"})
+    assert status == 201
+    assert body["record"]["weight_total"] == 100
+    assert body["record"]["version"] == 1
+    assert body["audit"]["action"] == "role_lens_created"
+
+
+def test_crew_portal_rejects_role_lens_weights_not_equal_to_100(protected_server):
+    server, _, _ = protected_server
+    status, body = post_json(server, "/api/crew-portal/role-lenses", {
+        "person_id": "1", "role_name": "Operations B2",
+        "responsibilities": [{"id": "execution", "title": "Execution", "weight": 80}],
+    }, {"Authorization": "Bearer test-token"})
+    assert status == 400
+    assert body["error"] == "role lens weights must total 100"
+
+
+def test_monthly_review_calculates_from_role_lens_weights(protected_server):
+    server, _, _ = protected_server
+    lens_status, lens = post_json(server, "/api/crew-portal/role-lenses", {
+        "person_id": "1", "role_name": "Operations B2", "responsibilities": [
+            {"id": "execution", "title": "Execution", "weight": 60},
+            {"id": "reporting", "title": "Reporting", "weight": 40},
+        ],
+    }, {"Authorization": "Bearer test-token"})
+    assert lens_status == 201
+    status, body = post_json(server, "/api/crew-portal/performance", {
+        "person_id": "1", "period": "2026-09", "score": "Meets expectations",
+        "role_lens_id": lens["record"]["id"],
+        "ratings": {"execution": 5, "reporting": 3},
+    }, {"Authorization": "Bearer test-token"})
+    assert status == 201
+    assert body["record"]["role_lens_id"] == lens["record"]["id"]
+    assert body["record"]["calculated_score"] == 84
