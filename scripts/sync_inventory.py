@@ -116,7 +116,7 @@ def normalize(board: dict, raw_items: list[dict]) -> dict:
             "source": {"provider": "monday", "board_id": BOARD_ID, "board_name": board.get("name"),
                        "customer_board_id": CUSTOMER_BOARD_ID, "customer_subitem_board_id": CUSTOMER_SUBITEM_BOARD_ID,
                        "incident_board_id": INCIDENT_BOARD_ID, "board_updated_at": board.get("updated_at")},
-            "synced_at": datetime.now(timezone.utc).isoformat(), "records": records}
+            "synced_at": datetime.now(timezone.utc).isoformat(), "item_count": len(records), "records": records}
 
 
 def validate(snapshot: dict) -> list[str]:
@@ -124,7 +124,9 @@ def validate(snapshot: dict) -> list[str]:
     ids = [r.get("source_item_id") for r in records]
     errors = []
     if snapshot.get("schema_version") != "inventory_asset.v1": errors.append("unsupported schema")
-    if len(records) != 121: errors.append(f"expected 121 items, received {len(records)}")
+    # Item count is source data, not a permanent schema constant. Validate the
+    # fetched count through snapshot metadata/readback, while allowing the
+    # inventory to grow or shrink without rejecting an otherwise valid sync.
     if len(ids) != len(set(ids)): errors.append("duplicate source item IDs")
     for record in records:
         if any(r.get("board_id") != CUSTOMER_BOARD_ID for r in record.get("customer_relations", [])): errors.append("customer relation target mismatch")
