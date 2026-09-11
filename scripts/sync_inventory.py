@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import urllib.request
 from datetime import datetime, timezone
@@ -90,6 +91,13 @@ def normalize(board: dict, raw_items: list[dict]) -> dict:
             issues.append("missing_asset_type")
         if not serial:
             issues.append("missing_serial_or_unit_identifier")
+        if not condition:
+            issues.append("missing_condition")
+        if serial and re.search(r"pending|not provided", serial, re.I):
+            issues.append("serial_pending_source_detail")
+        location = columns.get("location_mm2qk3qr", {}).get("text") or None
+        if location and re.search(r"pending|not provided", location, re.I):
+            issues.append("location_pending_source_detail")
         if len(customer) > 1:
             issues.append("multiple_customer_relations")
         if customer and any(r.get("board_id") != CUSTOMER_BOARD_ID for r in customer):
