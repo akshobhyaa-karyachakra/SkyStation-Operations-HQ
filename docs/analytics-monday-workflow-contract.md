@@ -20,25 +20,40 @@ Analytics must render the operational workflow from Monday records and stable re
 ## Canonical topology
 
 ```text
-Activity Repository (reference / planned)
-                 │ explicit board relation
-                 ▼
-Flight Operations (field execution)
-                 │ shared Activity Repository relation; no direct Flight → QA relation
-                 ▼
-Processing & QA (processing, checks, files)
-                 │ shared Activity Repository relation; no direct QA → Report relation
-                 ▼
-Report Submission (delivery evidence)
-                 │
-                 ├── follow-up / carry-forward
-                 ├── blocker / stuck branch
-                 ├── missing relation branch
-                 ├── missing date branch
-                 └── missing evidence branch
+ORDER LIFECYCLE
+New SkyStation order
+        │
+        ▼
+-1_SkyStation Hardware Installation / Disassembly
+        │
+        ▼
+0_Overview Mapping
+        │
+        ▼
+SkyStation Activity Repository
+        │
+        ├── Recurring Activities and/or Service Requests
+        │       │
+        │       ├── 1_Flight Operations
+        │       │       ├── 2_Processing and QA
+        │       │       └── 3_Report Submission → customer delivery
+        │       │
+        │       └── 4_Site Activities
+        │               └── recurring maintenance and cleaning
+        │
+        ├── 5_Night Security and Surveillance
+        │       └── independent night-team workflow
+        │
+        ├── 6_Work Tracker
+        │       └── one-time, solution-development, and process-improvement work
+        │
+        └── 7_Incident Logs
+                └── incident repository, including emergencies and landings
 ```
 
-The shared Activity Repository relation is the join key currently available across the execution boards. The adapter must preserve board-specific item IDs and report lineage confidence. It must not infer direct handoffs from item names, mirror text, or nearby dates.
+Supporting context boards such as SkyStation Inventory and SkyStation Customer Repository connect to the relevant operational records; they are not universal sequential stages.
+
+The main report-producing handoff is `1_Flight Operations → 2_Processing and QA → 3_Report Submission`. Site Activities, Night Security, Work Tracker, and Incident Logs remain distinct workflows with their own state semantics.
 
 ## Node definitions
 
