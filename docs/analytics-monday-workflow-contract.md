@@ -95,3 +95,72 @@ These figures are an audit snapshot, not the portal's permanent fixture. The fut
 ## Implementation boundary
 
 The public/static preview must not call Monday directly or contain credentials. The production path is a protected server-side read-only adapter that returns a versioned normalized model with `source_board_id`, `source_item_id`, relation IDs, `source_updated_at`, `synced_at`, and explicit data-quality states. Until that adapter exists, the preview may show synthetic/demo values only when clearly labelled as demo data; the topology and field names must follow this contract.
+
+## Monday integration contract
+
+The implemented adapter is `scripts/sync_workflow_network.py`. It composes the existing read-only board adapters and writes `data/workflow_network.snapshot.json`; the protected runtime exposes that snapshot at `/api/workflow-network`. It must never be called from public browser JavaScript with a Monday token.
+
+The adapter fetches every page from each source board before aggregation. A first page is never treated as the complete board. It preserves Monday board and item IDs, People IDs, and Board Relation target IDs; names and mirror text are display values only and cannot establish a join.
+
+The normalized model is `workflow-network.v1` and contains:
+
+- stage summaries for Activity Repository, Flight Operations, Processing & QA, Report Submission, Incident Logs, and derived Customer Delivery;
+- per-stage source item IDs, record counts, status counts, review counts, and source board IDs;
+- semantic edges for `Activity Repository → Flight Operations`, `Flight Operations → Processing & QA`, `Processing & QA → Report Submission`, `Report Submission → Customer Delivery`, and `Flight Operations → Incident Logs`;
+- relation evidence showing which source item and Activity Repository item support a handoff;
+- node attention/red state and aggregate quality counts;
+- explicit `data_state` and validation failures.
+
+Customer Delivery is derived only from Report Submission records with `status = Done`. It is not evidence of a confirmed Customer Repository relation. Incident Logs is an outward branch from Flight Operations; the adapter must reject any Activity Repository → Incident Logs edge.
+
+## Failure and data-quality semantics
+
+The workflow must distinguish operational failure from incomplete evidence:
+
+```text
+confirmed blocked or failed handoff → red and flashing
+needs review or incomplete evidence → amber / review state
+working or in progress → workflow-family color
+completed with required evidence → completed state
+unrecognized or unavailable source state → needs_review / unavailable
+```
+
+`Stuck`, `Not Done`, `Blocked`, an unresolved blocker, failed QA, or an open incident can create an attention/red state only in the stage where the evidence exists. Missing dates, owners, relations, files, report links, or unfamiliar status labels are `Needs review`, not automatic failure. Missing dates render as `Deadline unknown`; they must never be rendered as `Overdue`.
+
+A stage conversion is confirmed only when the source relation, stage identity, and relevant date/evidence fields support it. Carry-forward records, unexpected relation targets, duplicate source IDs, conflicting statuses, and zero-denominator calculations remain unresolved rather than being inferred from names or neighboring rows.
+
+## Renderer and route safeguards
+
+The existing WebGL topology, camera choreography, labels, and animation remain the presentation layer for this model. Live data may change node state, counts, attention, and connector emphasis, but it must not create unsupported topology or replace the shared node/edge model.
+
+The renderer safeguards are:
+
+- one canvas and one WebGL renderer per workflow surface;
+- an idempotent `workflowRendererReady` guard that prevents duplicate animation loops on refresh or route changes;
+- a visible-state retry after Analytics route activation so a hidden canvas cannot permanently miss initialization;
+- one shared projection transform for spheres, links, particles, labels, and camera fitting;
+- endpoint-based wide framing with projected-bounds centering and label clamping;
+- dedicated Activity Repository framing that includes all inbound sources and their labels;
+- explicit Incident Logs playback before Customer Delivery, using only the Flight Operations → Incident Logs branch;
+- red flashing reserved for confirmed broken/incident paths, with the affected node, connector, and packet state driven from the same normalized state;
+- pause/replay/loop behavior that does not spawn a second renderer or reset unrelated camera state.
+
+## Runtime and security safeguards
+
+The Monday credential is read only from runtime configuration. If it is absent, the adapter exits before making a request and reports that synchronization is pending. Credentials, API keys, OAuth secrets, passwords, tokens, and connection strings must never be written to snapshots, source files, logs, public HTML, or Discord.
+
+The protected API must fail closed when the snapshot is absent, malformed, stale, or unauthorized. The public static preview must show an explicit unavailable/demo state rather than silently falling back to live-looking fixture values. Generated snapshots containing internal people or operational records are runtime-only and must not be committed to the public repository.
+
+Every future sync must verify schema version, complete pagination, duplicate IDs, expected relation targets, stage-specific status rules, source counts, and snapshot freshness before the workflow view is allowed to consume the result. Monday mutations are outside this contract; this path is read-only.
+
+## Verification record
+
+The current implementation has been verified with:
+
+- live authenticated Monday MCP schema and sample-record reads for the source boards;
+- normalized-model contract tests for source IDs, relation preservation, status-derived red states, Customer Delivery derivation, unsupported edges, and missing-secret behavior;
+- Python compilation and inline JavaScript syntax checks;
+- protected endpoint registration at `/api/workflow-network`;
+- lifecycle checks for visible-state retry and duplicate-renderer prevention.
+
+Browser screenshot QA remains a separate requirement. Hosted source propagation and implementation markers do not constitute visual approval; a real browser pass must still confirm settled rendering, label readability, red flashing, narrow-screen behavior, and the complete playback cycle.
