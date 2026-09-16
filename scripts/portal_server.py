@@ -28,6 +28,7 @@ SNAPSHOTS = {
     "/api/work-tracker": ROOT / "data" / "work_tracker.snapshot.json",
     "/api/inventory": ROOT / "data" / "inventory.snapshot.json",
     "/api/incidents": ROOT / "data" / "incident_logs.snapshot.json",
+    "/api/workflow-network": ROOT / "data" / "workflow_network.snapshot.json",
 }
 TOKEN = os.environ.get("PORTAL_API_TOKEN")
 DEV_LOCAL = os.environ.get("PORTAL_DEV_ALLOW_LOCAL") == "1"
