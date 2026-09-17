@@ -14,16 +14,16 @@ SPEC.loader.exec_module(MODULE)
 
 class CustomerRepositoryBillingTests(unittest.TestCase):
     def test_normalizes_current_latest_billing_fields(self):
-        snap = MODULE.normalize({"name": "Subitems of SkyStation Customer Repository", "updated_at": "2026-09-16T00:00:00Z"}, [{"id": "1", "name": "ACME", "subitems": [{"id": "2", "name": "Bikaner - SkyStation 1", "updated_at": "2026-09-16T00:00:00Z", "column_values": [{"id": "color_mm782zsj", "text": "Invoiced"}, {"id": "text_mm78rn5r", "text": "INV-1"}, {"id": "numeric_mm78f2z0", "text": "520000"}, {"id": "board_relation_mm4xbyad", "linked_items": [{"id": "3", "name": "SS2_009", "board": {"id": "5028042389", "name": "SkyStation Inventory"}}]}]}]}])
+        snap = MODULE.normalize({"name": "Subitems of SkyStation Customer Repository", "updated_at": "2026-09-16T00:00:00Z"}, [{"id": "1", "name": "ACME", "subitems": [{"id": "2", "name": "Bikaner - SkyStation 1", "updated_at": "2026-09-16T00:00:00Z", "column_values": [{"id": "color_mm79payw", "text": "Billed"}, {"id": "text_mm78rn5r", "text": "INV-1"}, {"id": "numeric_mm78f2z0", "text": "520000"}, {"id": "board_relation_mm4xbyad", "linked_items": [{"id": "3", "name": "SS2_009", "board": {"id": "5028042389", "name": "SkyStation Inventory"}}]}]}]}])
         self.assertEqual(snap["schema_version"], "billing.v1")
         self.assertEqual(snap["records"][0]["customer_name"], "ACME")
         self.assertEqual(snap["records"][0]["invoice_number"], "INV-1")
         self.assertEqual(snap["records"][0]["data_state"], "current")
 
     def test_invoiced_without_invoice_is_review(self):
-        snap = MODULE.normalize({"name": "x"}, [{"id": "1", "name": "x", "subitems": [{"id": "2", "name": "x", "column_values": [{"id": "color_mm782zsj", "text": "Invoiced"}]}]}])
+        snap = MODULE.normalize({"name": "x"}, [{"id": "1", "name": "x", "subitems": [{"id": "2", "name": "x", "column_values": [{"id": "color_mm79payw", "text": "Billed"}]}]}])
         self.assertEqual(snap["records"][0]["data_state"], "needs_review")
-        self.assertIn("invoiced_without_invoice_number", snap["records"][0]["validation_issues"])
+        self.assertIn("billed_without_invoice_number", snap["records"][0]["validation_issues"])
 
     def test_missing_secret_makes_no_request(self):
         env = os.environ.copy(); env.pop("MONDAY_API_TOKEN", None)
