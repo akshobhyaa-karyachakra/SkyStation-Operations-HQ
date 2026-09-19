@@ -25,6 +25,14 @@ Last reviewed: 2026-09-19
 - Decision: browser does not call Monday directly; server adapters and normalized snapshots remain the integration boundary.
 - Effect: public/static UI must not contain secrets or raw protected source records.
 
+## 2026-09-19 — Internal portal polish versus Public Dashboard redesign
+
+- Decision: preserve the current overall structure, navigation, logic, routes, and data flow of the existing internal portal tabs; future work there is polish-only unless separately approved.
+- Polish scope: spacing, alignment, typography, component consistency, responsive fixes, accessibility, loading/empty/error states, and restrained motion.
+- Separate track: the Public Dashboard/Wallboard remains eligible for a broader redesign and will be planned independently.
+- Source: `hermes_polish_prompt.pdf` and the Discord direction in this thread.
+- Effect: do not apply the internal portal polish freeze to the Public Dashboard; do not redesign the internal portal tabs implicitly while polishing them.
+
 ## Open decisions
 
 - Canonical business-logic Google Doc URL and owner.
