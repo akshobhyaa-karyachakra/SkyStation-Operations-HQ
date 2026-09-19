@@ -1,0 +1,25 @@
+name: Source or contract change
+description: Propose a change to canonical logic, source mapping, normalized entities, or projections.
+title: "contract: "
+labels: [contract, needs-review]
+body:
+  - type: textarea
+    id: source
+    attributes:
+      label: Source evidence
+      description: Link the canonical document section, Monday board/schema, or approved decision.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: Describe affected entities, joins, metrics, routes, public boundaries, and tests.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
