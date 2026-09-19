@@ -7,7 +7,7 @@ SkyStation Operations HQ is Skylark Drones' operations intelligence portal for d
 ## Public entry points
 
 - `/` — protected production portal. It fails closed when authentication or current source data is unavailable.
-- `/design-preview.html` — authentication-free synthetic preview. All people, customers, sites, assets, metrics, and commercial values on this page are fictional.
+- `/rebuild-preview.html` — maintained authentication-free synthetic portal preview. Values are fictional and the page is not connected to production APIs.
 
 ## Data boundaries
 
