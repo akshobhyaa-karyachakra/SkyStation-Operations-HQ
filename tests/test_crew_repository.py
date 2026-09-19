@@ -17,6 +17,8 @@ def payload(records):
             entry = {"id": cid, "text": value}
             if cid == "multiple_person_mm6msyq2":
                 entry["persons_and_teams"] = value
+            if cid == "board_relation_mm79kcd6":
+                entry["linked_items"] = value
             cols.append(entry)
         items.append({"id": record["id"], "name": record["name"], "group": {"id": record["group_id"], "title": record["group"]}, "column_values": cols})
     return {"data": {"boards": [{"id": module.BOARD_ID, "name": "SkyStation Crew Repository", "updated_at": "2026-09-11T00:00:00Z", "items_page": {"items": items}}]}}
@@ -30,10 +32,11 @@ def record(i, availability="Available", group="Site Operations", team_lead="", m
         "group": group,
         "columns": {
             "color_mm6mamdg": availability,
-            "text_mm6mk51e": "Operator",
+            "board_relation_mm79kcd6": [{"linked_item_id": "700", "linked_item_name": "Operator"}],
+            "lookup_mm792kmk": "Engineering",
             "multiple_person_mm6msyq2": manager or [],
             "boolean_mm6m50k9": team_lead,
-            "text_mm6mg4v2": "B1",
+            "lookup_mm79sxzf": "B1",
             "text_mm6mx08z": "India",
             "boolean_mm6mvm85": "v",
             "date_mm6mm5pf": "2026-01-01",
@@ -67,6 +70,42 @@ def test_team_lead_is_boolean_designation_and_manager_preserves_people_id():
     assert person["manager"] == [{"monday_user_id": "42", "name": "Manager", "kind": "person"}]
 
 
+def test_role_relation_and_live_mirrors_replace_deleted_text_role_and_band_columns():
+    snapshot = module.normalize(payload([record(1)]))
+    person = snapshot["records"][0]
+    assert person["role_relation"] == {
+        "monday_item_ids": ["700"],
+        "items": [{"monday_item_id": "700", "name": "Operator"}],
+    }
+    assert person["team"] == "Engineering"
+    assert person["band"] == "B1"
+    assert "official_role" not in person
+
+
+def test_missing_role_relation_is_needs_review_and_never_name_matched():
+    item = record(1)
+    item["columns"]["board_relation_mm79kcd6"] = []
+    item["name"] = "Operator"
+    snapshot = module.normalize(payload([item]))
+    person = snapshot["records"][0]
+    assert person["role_relation"] == {"monday_item_ids": [], "items": []}
+    assert person["data_state"] == "needs_review"
+    assert "missing_role_relation" in person["needs_review"]
+    assert person["role_relation"]["items"] == []
+
+
+def test_multiple_role_relations_are_needs_review_for_single_value_column():
+    item = record(1)
+    item["columns"]["board_relation_mm79kcd6"] = [
+        {"linked_item_id": "700", "linked_item_name": "Operator"},
+        {"linked_item_id": "701", "linked_item_name": "Other Operator"},
+    ]
+    snapshot = module.normalize(payload([item]))
+    person = snapshot["records"][0]
+    assert person["data_state"] == "needs_review"
+    assert "multiple_role_relations" in person["needs_review"]
+
+
 def test_duplicate_monday_ids_fail_validation():
     records = [record(1), record(1)]
     snapshot = module.normalize(payload(records))
@@ -78,9 +117,9 @@ def test_validator_accepts_current_17_record_shape(tmp_path):
         "schema_version": "crew.v1",
         "item_count": 17,
         "records": [
-            {"monday_item_id": str(i), "name": f"Person {i}", "team_group": "Site Operations", "official_role": "Operator", "availability": "Available", "manager": [], "historical": False}
+            {"monday_item_id": str(i), "name": f"Person {i}", "team_group": "Site Operations", "role_relation": {"monday_item_ids": ["700"], "items": [{"monday_item_id": "700", "name": "Operator"}]}, "availability": "Available", "manager": [], "historical": False, "data_state": "current", "needs_review": []}
             for i in range(16)
-        ] + [{"monday_item_id": "16", "name": "Former Person", "team_group": "Site Operations", "official_role": "Operator", "availability": "Terminated", "manager": [], "historical": True}],
+        ] + [{"monday_item_id": "16", "name": "Former Person", "team_group": "Site Operations", "role_relation": {"monday_item_ids": ["700"], "items": [{"monday_item_id": "700", "name": "Operator"}]}, "availability": "Terminated", "manager": [], "historical": True, "data_state": "current", "needs_review": []}],
     }
     path = tmp_path / "crew.json"
     path.write_text(json.dumps(snapshot))

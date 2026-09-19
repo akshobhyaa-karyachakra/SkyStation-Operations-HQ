@@ -30,6 +30,7 @@ SNAPSHOTS = {
     "/api/incidents": ROOT / "data" / "incident_logs.snapshot.json",
     "/api/workflow-network": ROOT / "data" / "workflow_network.snapshot.json",
     "/api/billing": ROOT / "data" / "customer_repository_billing.snapshot.json",
+    "/api/role-framework": ROOT / "data" / "role_framework.snapshot.json",
 }
 TOKEN = os.environ.get("PORTAL_API_TOKEN")
 DEV_LOCAL = os.environ.get("PORTAL_DEV_ALLOW_LOCAL") == "1"

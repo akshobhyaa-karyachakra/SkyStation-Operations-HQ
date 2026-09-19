@@ -27,8 +27,9 @@ Canonical source: `SkyStation Crew Repository` (`5030902067`).
 | `name` | Name | Display value only |
 | `team_group_id` | item group ID | Canonical team key |
 | `team_group` | item group title | Current group label |
-| `official_role` | `text_mm6mk51e` | Preserve source text |
-| `band` | `text_mm6mg4v2` | Preserve source text; no inferred band |
+| `role_relation` | `board_relation_mm79kcd6` → Role Framework (`5031376976`) | Preserve linked role item IDs and names; no name-matched fallback |
+| `team` | `lookup_mm792kmk` → Team mirror | Preserve the live Team mirror; null when blank |
+| `band` | `lookup_mm79sxzf` → Band mirror | Preserve the live Band mirror; null when blank |
 | `manager[]` | `multiple_person_mm6msyq2` | Monday People IDs and names |
 | `team_lead` | `boolean_mm6m50k9` | Boolean |
 | `region_location` | `text_mm6mx08z` | Preserve source text |
@@ -41,10 +42,22 @@ Canonical source: `SkyStation Crew Repository` (`5030902067`).
 
 Required invariants:
 
-- 15 total records and 14 active records in the current snapshot.
+- Current record counts are read from the live board; do not encode a fixed roster size.
 - No duplicate Monday item IDs or names.
-- Aarya Vira and Ammar Dali resolve to `group_mm6m3fvh` / `SkyStation Operations` in the current source.
+- Role assignment is valid only when `role_relation.monday_item_ids` contains the explicit Role Framework item ID.
+- A missing Role relation sets the record `data_state` to `needs_review` and adds `missing_role_relation` to `needs_review`; the adapter never joins by crew or role display name.
+- `official_role` and the former text Band field are not valid normalized/source fields after the live schema change.
 - Historical records do not enter active-team metrics.
+
+## Entity: role_framework
+
+Canonical source: `SkyStation Team Role Bands & Weightage Framework` (`5031376976`) with competencies on generated subitem board `5031377037`.
+
+The protected `role-framework.v1` adapter preserves the parent role item ID, competency subitem IDs, current Team/Band and role-definition fields, Framework State, and the authoritative `Weightage %` values from subitems. Role and competency names are display values; parent and subitem IDs are the only relational keys.
+
+Only parent records with linked competency subitems are normalized as roles. Band definitions and framework rules remain in `metadata.non_role_parent_items`. A role is valid only when every competency has a numeric weight and the current weights total exactly 100%; missing, malformed, duplicate, or non-totaling data prevents snapshot publication. Crew Repository assignments use the explicit `board_relation_mm79kcd6` relation to this board; Team and Band in Crew Repository are mirrors, not independent sources.
+
+The endpoint is protected at `/api/role-framework`; the browser never calls Monday directly and runtime snapshots remain outside the public repository.
 
 ## Entity: planned_activity
 
