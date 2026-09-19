@@ -115,6 +115,19 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 @media(max-width:580px){.topbar{min-height:64px;padding:0 14px}.content{padding:16px 14px 32px}.headline{gap:14px;margin-bottom:14px}.panel-head{padding:14px}.head-note{max-width:none}}
 @media(prefers-reduced-motion:reduce){.nav button,.scope,.action,.tabs button,.analytics-tabs button,.crew-switch button,.inventory-tabs button,.mis-button,.billing-clear{transition:none!important}.nav button:hover,.action:hover,.tabs button:hover,.analytics-tabs button:hover,.crew-switch button:hover,.inventory-tabs button:hover,.mis-button:hover,.billing-clear:hover{transform:none!important}}
 </style>
+<style id="polish-batch-2-motion">
+@keyframes portalSurfaceIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes portalPanelIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes portalSignalIn{from{opacity:0;transform:translateY(6px) scale(.99)}to{opacity:1;transform:none}}
+.content.motion-ready>.headline{animation:portalSurfaceIn .32s var(--ui-ease) both}
+.content.motion-ready>.workspace>.panel{animation:portalPanelIn .42s var(--ui-ease) both}
+.content.motion-ready>.workspace>.panel:nth-child(2){animation-delay:.06s}
+.content.motion-ready>.workspace>.panel:nth-child(3){animation-delay:.12s}
+.content.motion-ready>.signal-grid>.signal{animation:portalSignalIn .34s var(--ui-ease) both}
+.content.motion-ready>.signal-grid>.signal:nth-child(2){animation-delay:.04s}.content.motion-ready>.signal-grid>.signal:nth-child(3){animation-delay:.08s}.content.motion-ready>.signal-grid>.signal:nth-child(4){animation-delay:.12s}.content.motion-ready>.signal-grid>.signal:nth-child(5){animation-delay:.16s}
+.drawer{transition:opacity var(--motion-enter) var(--ui-ease),transform var(--motion-enter) var(--ui-ease)}
+@media(prefers-reduced-motion:reduce){.content.motion-ready>.headline,.content.motion-ready>.workspace>.panel,.content.motion-ready>.signal-grid>.signal{animation:none!important;opacity:1;transform:none}.drawer{transition:none!important}}
+</style>
 <body>
 <div class="app">
 <aside class="rail"><div class="brand"><img class="mark" src="assets/favicon.svg?v=2" alt="SkyStation Operations Intelligence"><div><strong>SkyStation</strong><small>Operations Intelligence</small></div></div><div class="nav-label">Workspace</div><nav class="nav" aria-label="Primary navigation"><button class="active" data-route="activity">Activity Tracking</button><button data-public-wallboard>Public Wallboard</button><button data-route="inventory">Inventory</button><button data-route="crew">Crew Management</button><button data-route="analytics">Analytics</button><button data-route="billing">Billing</button><button data-route="mis">MIS</button><button data-route="manager-vault">Manager Vault <span class="vault-badge">DESIGN</span></button></nav><div class="rail-foot">SYNTHETIC REVIEW SURFACE<br><span>Authentication-free · no live records</span></div></aside>
