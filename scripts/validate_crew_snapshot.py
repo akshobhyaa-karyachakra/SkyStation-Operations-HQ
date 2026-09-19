@@ -25,9 +25,16 @@ def validate(snapshot: dict) -> list[str]:
     if active_count + sum(r.get("availability") in {"Terminated", "Resigned"} for r in records) > len(records):
         errors.append("invalid availability classification")
     for record in records:
-        for field in ("monday_item_id", "name", "team_group", "official_role"):
+        for field in ("monday_item_id", "name", "team_group", "role_relation"):
             if not record.get(field):
                 errors.append(f"{record.get('name') or record.get('monday_item_id')}: missing {field}")
+        if "official_role" in record:
+            errors.append(f"{record.get('name') or record.get('monday_item_id')}: stale official_role field")
+        relation = record.get("role_relation") or {}
+        if not isinstance(relation.get("monday_item_ids"), list) or not isinstance(relation.get("items"), list):
+            errors.append(f"{record.get('name') or record.get('monday_item_id')}: invalid role_relation")
+        if not relation.get("monday_item_ids") and "missing_role_relation" not in (record.get("needs_review") or []):
+            errors.append(f"{record.get('name') or record.get('monday_item_id')}: missing role relation not flagged needs_review")
         if len(record.get("manager", [])) > 1:
             errors.append(f"{record['name']}: multiple managers")
     return errors

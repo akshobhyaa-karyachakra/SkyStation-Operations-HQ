@@ -17,6 +17,7 @@ The portal includes:
 - Activity Tracking with Today / This Week / This Month states, owner/status filters, and an execution register;
 - Inventory catalogue with fleet, drone-model, vehicle-system, and customer-allocation views;
 - Crew Management with a Crew Repository-backed 14-active / 1-historical directory and historical-record toggle;
+- Role Framework with stable Monday role/competency IDs and protected read-only synchronization;
 - Daily / Weekly / Monthly Analytics;
 - handoff and reporting pipeline views;
 - billing-unit decision views;
@@ -26,7 +27,7 @@ Crew Repository now has an explicit read-only data boundary:
 
 - `scripts/sync_crew_repository.py` calls Monday server-side using `MONDAY_API_TOKEN`, requests only the approved Crew Repository fields, normalizes records by Monday item/user IDs, validates counts and team assignments, and writes `data/crew_repository.snapshot.json`.
 - `scripts/validate_crew_snapshot.py` validates a snapshot without contacting Monday.
-- `scripts/portal_server.py` serves the portal and authenticated read-only normalized endpoints: `/api/crew`, `/api/activity`, `/api/flight`, `/api/site-activities`, `/api/processing-qa`, `/api/report-submission`, `/api/work-tracker`, `/api/inventory`, and `/api/incidents`. Direct `/data` access is blocked. Missing or invalid snapshots return `503` with `data_state: unavailable`. Production requires `PORTAL_API_TOKEN`; local-only testing can use `PORTAL_DEV_ALLOW_LOCAL=1` on loopback. Google Workspace manager authentication and production deployment remain pending.
+- `scripts/portal_server.py` serves the portal and authenticated read-only normalized endpoints: `/api/crew`, `/api/activity`, `/api/flight`, `/api/site-activities`, `/api/processing-qa`, `/api/report-submission`, `/api/work-tracker`, `/api/inventory`, `/api/incidents`, and `/api/role-framework`. Direct `/data` access is blocked. Missing or invalid snapshots return `503` with `data_state: unavailable`. Production requires `PORTAL_API_TOKEN`; local-only testing can use `PORTAL_DEV_ALLOW_LOCAL=1` on loopback. Google Workspace manager authentication and production deployment remain pending.
 - The Crew Management view loads `/api/crew` and fails closed with `no fallback data loaded` if it cannot load; it does not silently use a second roster fixture.
 
 Run the connector only in a trusted server/runtime:
@@ -36,4 +37,4 @@ MONDAY_API_TOKEN='[REDACTED]' python3 scripts/sync_crew_repository.py
 python3 scripts/validate_crew_snapshot.py
 ```
 
-The generated snapshot is intentionally local/runtime-only and is ignored by Git because this repository is published through GitHub Pages. Do not deploy internal Monday data through the public static bundle. Authentication, protected production storage, scheduled synchronization, the remaining operational-board connectors, contract-backed billing configuration, and production PDF generation remain to be connected.
+- The generated snapshots are intentionally local/runtime-only and are ignored by Git because this repository is published through GitHub Pages. Do not deploy internal Monday data through the public static bundle. Authentication, protected production storage, scheduled synchronization, the remaining operational-board connectors, contract-backed billing configuration, and production PDF generation remain to be connected.

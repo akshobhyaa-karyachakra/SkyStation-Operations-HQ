@@ -4,7 +4,7 @@ Captured from authenticated Monday read-only board metadata on 2026-08-27. IDs b
 
 | Purpose | Board | Board ID | Current items | Key relation / identity |
 |---|---|---:|---:|---|
-| People master | SkyStation Crew Repository | `5030902067` | 15 | item group + People Manager |
+| People master | SkyStation Crew Repository | `5030902067` | live | item group + Role relation + Team/Band mirrors + People Manager |
 | Planning master | SkyStation Activity Repository | `5027240228` | 72 | `board_relation_mm2qwdd3` → Customer Repository |
 | Flight execution | 1_Flight Operations | `5027240883` | 21 | `board_relation_mm1gwp2a` → Activity Repository |
 | Processing and QA | 2_Processing and QA | `5027256991` | 14 | `board_relation_mm1gwp2a` → Activity Repository |
@@ -27,7 +27,10 @@ Build and validate adapters in this order:
 
 ## Known schema facts
 
-- Crew team is the Monday group, not a redundant Team column.
+- Crew team is represented by the live `lookup_mm792kmk` Team mirror; the Monday group remains the crew grouping key.
+- Crew Role is an explicit single-value relation: `board_relation_mm79kcd6` (`Role`) → Role Framework (`5031376976`).
+- Crew Band is the live `lookup_mm79sxzf` Band mirror, sourced from the Role Framework Band field.
+- The former text columns `text_mm6mk51e` (Official Role) and `text_mm6mg4v2` (Band) were deleted and must not be queried or normalized.
 - Crew `Manager` is a People column: `multiple_person_mm6msyq2`.
 - Crew `Availability` is a Status column: `color_mm6mamdg`.
 - Activity Repository has `Owner`, `Co Owner`, `Activity Type`, `Active`, `Weekly Frequency`, `Assignment Date`, and Customer Repository relation fields.
@@ -89,6 +92,7 @@ The adapter preserves separate relations to Inventory (`5028042389`), Customer R
 
 - Treat board metadata as live configuration; do not hardcode column positions.
 - Re-read schemas before each adapter rollout because users can edit columns/views.
-- Use board relation IDs and People IDs for joins. Mirror text is not authoritative.
+- Use board relation IDs and People IDs for joins. Team/Band mirrors are source-backed presentation values; they do not create role joins.
+- A missing Crew Role relation is `needs_review`; never resolve a role by matching a crew name or role display name.
 - Preserve missing values as null and surface them as data-quality states.
 - Do not mutate any board during source-map discovery.

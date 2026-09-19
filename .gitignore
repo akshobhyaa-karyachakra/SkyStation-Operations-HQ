@@ -9,6 +9,7 @@ data/inventory.snapshot.json
 data/incident_logs.snapshot.json
 data/workflow_network.snapshot.json
 data/customer_repository_billing.snapshot.json
+data/role_framework.snapshot.json
 data/crew_portal.records.json
 data/crew_portal_files/
 __pycache__/

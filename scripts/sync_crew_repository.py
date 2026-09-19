@@ -29,8 +29,8 @@ query($board_id: ID!, $cursor: String) {
         name
         group { id title }
         column_values(ids: [
-          \"color_mm6mamdg\", \"text_mm6mk51e\", \"multiple_person_mm6msyq2\",
-          \"boolean_mm6m50k9\", \"text_mm6mg4v2\", \"text_mm6mx08z\",
+          \"color_mm6mamdg\", \"board_relation_mm79kcd6\", \"lookup_mm792kmk\", \"lookup_mm79sxzf\", \"multiple_person_mm6msyq2\",
+          \"boolean_mm6m50k9\", \"text_mm6mx08z\",
           \"boolean_mm6mvm85\", \"date_mm6mm5pf\", \"email_mm6mx3gz\", \"long_text_mm6mswwm\"
         ]) {
           id
@@ -38,6 +38,7 @@ query($board_id: ID!, $cursor: String) {
           value
           type
           ... on PeopleValue { persons_and_teams { id kind name } }
+          ... on BoardRelationValue { linked_items { linked_item_id linked_item_name } }
         }
       }
       cursor
@@ -48,10 +49,11 @@ query($board_id: ID!, $cursor: String) {
 
 COLUMN_MAP = {
     "color_mm6mamdg": "availability",
-    "text_mm6mk51e": "official_role",
+    "board_relation_mm79kcd6": "role_relation",
+    "lookup_mm792kmk": "team",
+    "lookup_mm79sxzf": "band",
     "multiple_person_mm6msyq2": "manager",
     "boolean_mm6m50k9": "team_lead",
-    "text_mm6mg4v2": "band",
     "text_mm6mx08z": "region_location",
     "boolean_mm6mvm85": "daily_tracking_required",
     "date_mm6mm5pf": "start_date",
@@ -106,18 +108,34 @@ def normalize(payload: dict) -> dict:
                     {"monday_user_id": str(p["id"]), "name": p.get("name"), "kind": p.get("kind")}
                     for p in people if p.get("kind") == "person"
                 ]
+            elif key == "role_relation":
+                links = column.get("linked_items") or []
+                fields["role_relation"] = {
+                    "monday_item_ids": [str(link["linked_item_id"]) for link in links if link.get("linked_item_id") is not None],
+                    "items": [
+                        {"monday_item_id": str(link["linked_item_id"]), "name": link.get("linked_item_name")}
+                        for link in links if link.get("linked_item_id") is not None
+                    ],
+                }
             elif key == "team_lead" or key == "daily_tracking_required":
                 fields[key] = column.get("text") == "v"
             else:
                 fields[key] = column.get("text") or None
         group = item.get("group") or {}
         availability = fields.get("availability")
+        role_relation = fields.get("role_relation", {"monday_item_ids": [], "items": []})
+        needs_review = []
+        if not role_relation["monday_item_ids"]:
+            needs_review.append("missing_role_relation")
+        elif len(role_relation["monday_item_ids"]) > 1:
+            needs_review.append("multiple_role_relations")
         records.append({
             "monday_item_id": str(item["id"]),
             "name": item["name"],
             "team_group_id": group.get("id"),
             "team_group": group.get("title"),
-            "official_role": fields.get("official_role"),
+            "role_relation": role_relation,
+            "team": fields.get("team"),
             "band": fields.get("band"),
             "manager": fields.get("manager", []),
             "team_lead": fields.get("team_lead", False),
@@ -129,6 +147,8 @@ def normalize(payload: dict) -> dict:
             "start_date": fields.get("start_date"),
             "email": fields.get("email"),
             "notes": fields.get("notes"),
+            "data_state": "needs_review" if needs_review else "current",
+            "needs_review": needs_review,
         })
     return {
         "schema_version": "crew.v1",
@@ -150,6 +170,13 @@ def validate(snapshot: dict) -> list[str]:
     for r in records:
         if not r.get("monday_item_id") or not r.get("name") or not r.get("team_group"):
             errors.append(f"missing identity/team fields for {r.get('name') or r.get('monday_item_id')}")
+        relation = r.get("role_relation") or {}
+        if not isinstance(relation.get("monday_item_ids"), list) or not isinstance(relation.get("items"), list):
+            errors.append(f"invalid role relation for {r.get('name') or r.get('monday_item_id')}")
+        if not relation.get("monday_item_ids") and "missing_role_relation" not in (r.get("needs_review") or []):
+            errors.append(f"missing role relation is not flagged for {r.get('name') or r.get('monday_item_id')}")
+        if len(relation.get("monday_item_ids") or []) > 1 and "multiple_role_relations" not in (r.get("needs_review") or []):
+            errors.append(f"multiple role relations are not flagged for {r.get('name') or r.get('monday_item_id')}")
         if len(r.get("manager", [])) > 1:
             errors.append(f"multiple managers for {r['name']}")
     return errors
