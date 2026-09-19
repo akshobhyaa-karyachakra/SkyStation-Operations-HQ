@@ -20,15 +20,32 @@ Every source-backed response must preserve one of:
 - `unavailable`
 - `needs_review`
 
-## Known endpoint families
+## Implemented endpoint inventory
 
+The current runtime defines these snapshot endpoints in `scripts/portal_server.py`:
+
+- `/api/crew` — protected Crew Repository snapshot.
+- `/api/activity` — protected Activity Repository snapshot.
+- `/api/flight` — protected Flight Operations snapshot.
+- `/api/site-activities` — protected Site Activities snapshot.
+- `/api/processing-qa` — protected Processing and QA snapshot.
+- `/api/report-submission` — protected Report Submission snapshot.
+- `/api/work-tracker` — protected Work Tracker snapshot.
+- `/api/inventory` — protected Inventory snapshot.
+- `/api/incidents` — protected Incident Logs snapshot.
+- `/api/workflow-network` — protected workflow network snapshot.
+- `/api/billing` — protected Customer Repository billing snapshot.
+- `/api/role-framework` — protected Role Framework snapshot.
+- `/api/metrics` — protected derived metrics built from available snapshots.
+- `/api/crew-portal` — protected Manager Vault store projection.
+- `/api/crew-portal/role-lenses` — protected role-lens projection.
+- `/api/crew-portal/performance` — protected performance projection.
+- `/api/crew-portal/responsibilities` — protected responsibility projection.
+- `/api/crew-portal/requests` — protected edit-request projection.
+- `/api/crew-portal/one-to-ones` — protected one-to-one projection.
 - `/api/public-status` — public source state, schema version, and update timestamp only.
-- Crew Repository projection — protected source-backed crew records and aggregate inputs.
-- Role Framework projection — protected role/competency snapshot.
-- Workflow/analytics projection — protected normalized workflow data.
-- Inventory, incident, activity, billing, and report projections — protected unless explicitly reduced to approved public aggregates.
 
-The exact endpoint names and response schemas are implementation-owned and must be read from `scripts/portal_server.py` before production integration.
+Snapshot endpoints return `401` when unauthorized, `503` with `data_state: unavailable` when no snapshot exists, `503` with `data_state: needs_review` when the snapshot is invalid, and `200` with the body plus `data_state` and `snapshot_updated_at` when valid/current or stale. The exact field schemas remain implementation-owned by each adapter and must be updated here when a schema is promoted for production use.
 
 ## Public projection rules
 

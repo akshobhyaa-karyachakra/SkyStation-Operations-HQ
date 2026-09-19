@@ -46,8 +46,9 @@ The browser never calls Monday directly. Stable source IDs and explicit relation
 ## Deployment state
 
 - GitHub Pages deployment is working for the static preview.
-- Latest UI publication before this documentation baseline: commit `0d27e67`.
-- Documentation baseline commit: `51c057e`.
+- Documentation roadmap commit: `51c057e`.
+- Full documentation baseline commit: `728d74f`.
+- Latest UI publication before the documentation baseline: commit `0d27e67`.
 - Production HTTPS reverse proxy, runtime secret configuration, scheduler, Google OAuth, and manager allowlist remain external configuration work.
 
 ## Architecture decisions required next
