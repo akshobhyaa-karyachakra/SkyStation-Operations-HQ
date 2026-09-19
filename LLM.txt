@@ -7,7 +7,7 @@ SkyStation Operations HQ is Skylark Drones' operations intelligence portal for d
 ## Public boundary
 
 - `index.html` is the protected production portal shell. It must fail closed when authentication, authorization, backend configuration, or current source snapshots are unavailable.
-- `design-preview.html` is an authentication-free, synthetic-only visual preview. Its people, customers, sites, assets, counts, percentages, and amounts are fictional.
+- `rebuild-preview.html` is the maintained authentication-free synthetic portal preview. Its values are fictional and it is not connected to production APIs.
 - Do not infer live operational facts from the synthetic preview.
 - Public dashboard projections must exclude confidential billing amounts, employee-level sensitive details, and internal Monday snapshots.
 

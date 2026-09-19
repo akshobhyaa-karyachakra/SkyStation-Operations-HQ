@@ -1,0 +1,13 @@
+# Default review owner
+* @akshobhyaa-karyachakra
+
+# Contract and security boundaries
+/docs/ @akshobhyaa-karyachakra
+/scripts/ @akshobhyaa-karyachakra
+/tests/ @akshobhyaa-karyachakra
+/.github/ @akshobhyaa-karyachakra
+
+# Public surfaces
+/rebuild-preview.html @akshobhyaa-karyachakra
+/public-wallboard.html @akshobhyaa-karyachakra
+/assets/ @akshobhyaa-karyachakra

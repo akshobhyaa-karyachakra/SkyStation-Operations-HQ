@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security reporting
+    url: https://github.com/akshobhyaa-karyachakra/SkyStation-Operations-HQ/security
+    about: Do not report credentials, authorization bugs, or data exposure publicly.
