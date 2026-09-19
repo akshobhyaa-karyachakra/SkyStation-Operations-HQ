@@ -47,5 +47,8 @@ jobs:
           node --check /tmp/rebuild-preview.js
           node --check /tmp/public-wallboard.js
 
+      - name: Check generated artifact manifest
+        run: python scripts/check_generated_artifacts.py
+
       - name: Check public wallboard safety markers
         run: python scripts/validate_public_surface.py
