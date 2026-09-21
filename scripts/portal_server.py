@@ -15,7 +15,8 @@ import uuid
 from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from portal_metrics import build_metrics
+from urllib.parse import parse_qs, urlsplit
+from portal_metrics import build_metrics, build_person_work_heatmap, build_resource_calendar
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOTS = {
@@ -203,6 +204,43 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(503, {"error": "crew portal storage unavailable", "data_state": "needs_review"})
 
     def do_GET(self) -> None:
+        request = urlsplit(self.path)
+        query = parse_qs(request.query)
+        if request.path in {"/api/resource-calendar", "/api/person-work-heatmap"}:
+            if not self._authorized():
+                self._json(401, {"error": "unauthorized"})
+                return
+            start_date = (query.get("start_date") or [None])[0]
+            end_date = (query.get("end_date") or [None])[0]
+            if not start_date or not end_date:
+                self._json(400, {"error": "start_date and end_date are required"})
+                return
+            snapshot_path = SNAPSHOTS.get("/api/work-tracker")
+            state, updated_at = snapshot_state(snapshot_path) if snapshot_path else ("unavailable", None)
+            if state in {"unavailable", "needs_review"} or snapshot_path is None:
+                self._json(503, {"error": "work tracker snapshot unavailable", "data_state": state})
+                return
+            try:
+                snapshot = json.loads(snapshot_path.read_text())
+                records = snapshot.get("records", [])
+                if request.path == "/api/resource-calendar":
+                    body = build_resource_calendar(records, start_date, end_date)
+                else:
+                    person_id = (query.get("person_id") or [None])[0]
+                    if not person_id:
+                        self._json(400, {"error": "person_id is required"})
+                        return
+                    grouping = (query.get("grouping") or ["category"])[0]
+                    if grouping not in {"category", "customer"}:
+                        self._json(400, {"error": "grouping must be category or customer"})
+                        return
+                    body = build_person_work_heatmap(records, person_id, start_date, end_date, grouping)
+                body["source_state"] = state
+                body["snapshot_updated_at"] = updated_at
+                self._json(200, body)
+            except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+                self._json(400, {"error": str(exc), "data_state": "needs_review"})
+            return
         if self.path == "/api/crew-portal/role-lenses":
             if not self._authorized():
                 self._json(401, {"error": "unauthorized"})

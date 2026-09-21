@@ -21,6 +21,8 @@ The current preview uses client-side route buttons inside `rebuild-preview.html`
 - Billing — preview route with source-state handling.
 - MIS — customer-safe export preview.
 - Manager Vault — future protected workspace.
+- Crew Overview resource allocation — protected internal calendar of dated work assignments.
+- Crew Deep Dive person heatmap — protected individual work-density view with source drilldowns.
 
 ## Public Wallboard
 

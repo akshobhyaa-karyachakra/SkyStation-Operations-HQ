@@ -27,7 +27,16 @@ def protected_server(tmp_path, monkeypatch):
         "item_count": 1,
         "records": [{"monday_item_id": "1", "name": "Example Person", "availability": "Available"}],
     }))
-    monkeypatch.setattr(portal_server, "SNAPSHOTS", {"/api/inventory": snapshot, "/api/crew": crew_snapshot})
+    work_snapshot = tmp_path / "work_tracker.snapshot.json"
+    work_snapshot.write_text(json.dumps({
+        "schema_version": "work_item.v1",
+        "records": [{
+            "source_item_id": "work-1", "name": "Example work", "start_date": "2026-09-20",
+            "owner": [{"monday_user_id": "1", "name": "Example Person", "kind": "person"}],
+            "category": "Inspection", "status": "Done", "data_state": "current",
+        }],
+    }))
+    monkeypatch.setattr(portal_server, "SNAPSHOTS", {"/api/inventory": snapshot, "/api/crew": crew_snapshot, "/api/work-tracker": work_snapshot})
     portal_store = tmp_path / "crew_portal.json"
     monkeypatch.setattr(portal_server, "CREW_PORTAL_STORE", portal_store)
     monkeypatch.setattr(portal_server, "CREW_PORTAL_FILES", tmp_path / "crew-files")
@@ -95,6 +104,29 @@ def test_direct_snapshot_access_is_blocked(protected_server):
     status, body = request(server, "/data/inventory.snapshot.json")
     assert status == 404
     assert body["error"] == "direct data access disabled"
+
+
+def test_resource_calendar_requires_authentication(protected_server):
+    server, _, _ = protected_server
+    status, body = request(server, "/api/resource-calendar?start_date=2026-09-20&end_date=2026-09-20")
+    assert status == 401
+    assert body == {"error": "unauthorized"}
+
+
+def test_resource_calendar_returns_source_backed_rows(protected_server):
+    server, _, _ = protected_server
+    status, body = request(server, "/api/resource-calendar?start_date=2026-09-20&end_date=2026-09-20", {"Authorization": "Bearer test-token"})
+    assert status == 200
+    assert body["schema_version"] == "resource_calendar.v1"
+    assert body["rows"][0]["owner_id"] == "1"
+
+
+def test_person_heatmap_returns_selected_person_context(protected_server):
+    server, _, _ = protected_server
+    status, body = request(server, "/api/person-work-heatmap?person_id=1&start_date=2026-09-20&end_date=2026-09-20", {"Authorization": "Bearer test-token"})
+    assert status == 200
+    assert body["schema_version"] == "person_work_heatmap.v1"
+    assert body["person_id"] == "1"
 
 
 def test_crew_requires_authentication(protected_server):

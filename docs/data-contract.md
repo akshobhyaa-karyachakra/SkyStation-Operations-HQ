@@ -144,3 +144,13 @@ When a sync fails, serve the last valid protected snapshot with its age and erro
 ## Customer-safe projection
 
 Customer endpoints receive only approved customer fields and source-derived operational summaries. Internal owner identities, board IDs, workflow shorthand, internal notes, unresolved discussions, and raw asset details are excluded at normalization/API projection time, not merely hidden in the UI.
+
+## Resource allocation and person work projections
+
+The protected allocation projections derive from normalized `work_item` records and preserve source IDs and People IDs.
+
+- `resource_calendar.v1` groups dated records by owner and date, returns status counts, shared-assignment counts, source item drilldowns, and `unassigned_review_count`.
+- `person_work_heatmap.v1` scopes the same records to one `person_id`, groups by work type or customer, and returns dated counts and source item drilldowns.
+- Empty cells mean no matching source record; they never mean leave, availability, idle time, or capacity.
+- Counts are evidence density only. The portal must not derive utilization, productivity, ranking, or performance from them.
+- Both projections expose source freshness and fail closed with `unavailable` or `needs_review` when the work snapshot cannot be trusted.
