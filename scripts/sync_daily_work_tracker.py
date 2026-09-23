@@ -26,7 +26,7 @@ query($board_id: ID!, $cursor: String) {
     items_page(limit: 500, cursor: $cursor) {
       cursor
       items {
-        id name updated_at
+        id name updated_at group { id title }
         column_values(ids: [
           "board_relation_mm7cgmva", "date_mm7cyfzf", "multiple_person_mm7cc3p3",
           "color_mm7cff43", "numeric_mm7cj5sz", "numeric_mm7c6bbm",
@@ -50,7 +50,7 @@ query($board_id: ID!, $cursor: String) {
     items_page(limit: 500, cursor: $cursor) {
       cursor
       items {
-        id name updated_at
+        id name updated_at group { id title }
         column_values(ids: ["lookup_mm792kmk", "color_mm6mamdg"]) { id text value type }
       }
     }
@@ -104,7 +104,7 @@ def _crew_teams(crew_items: list[dict]) -> dict[str, str]:
     teams = {}
     for item in crew_items:
         columns = _columns(item)
-        team = columns.get("lookup_mm792kmk", {}).get("text") or None
+        team = columns.get("lookup_mm792kmk", {}).get("text") or (item.get("group") or {}).get("title")
         if team:
             teams[str(item["id"])] = team
     return teams
