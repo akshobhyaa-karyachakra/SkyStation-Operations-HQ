@@ -27,6 +27,7 @@ SNAPSHOTS = {
     "/api/processing-qa": ROOT / "data" / "processing_qa.snapshot.json",
     "/api/report-submission": ROOT / "data" / "report_submission.snapshot.json",
     "/api/work-tracker": ROOT / "data" / "work_tracker.snapshot.json",
+    "/api/daily-work-tracker": ROOT / "data" / "daily_work_tracker.snapshot.json",
     "/api/inventory": ROOT / "data" / "inventory.snapshot.json",
     "/api/incidents": ROOT / "data" / "incident_logs.snapshot.json",
     "/api/workflow-network": ROOT / "data" / "workflow_network.snapshot.json",
@@ -215,16 +216,16 @@ class Handler(SimpleHTTPRequestHandler):
             if not start_date or not end_date:
                 self._json(400, {"error": "start_date and end_date are required"})
                 return
-            snapshot_path = SNAPSHOTS.get("/api/work-tracker")
+            snapshot_path = SNAPSHOTS.get("/api/daily-work-tracker")
             state, updated_at = snapshot_state(snapshot_path) if snapshot_path else ("unavailable", None)
             if state in {"unavailable", "needs_review"} or snapshot_path is None:
-                self._json(503, {"error": "work tracker snapshot unavailable", "data_state": state})
+                self._json(503, {"error": "daily work tracker snapshot unavailable", "data_state": state})
                 return
             try:
                 snapshot = json.loads(snapshot_path.read_text())
                 records = snapshot.get("records", [])
                 if request.path == "/api/resource-calendar":
-                    body = build_resource_calendar(records, start_date, end_date)
+                    body = build_resource_calendar(records, start_date, end_date, scope="team")
                 else:
                     person_id = (query.get("person_id") or [None])[0]
                     if not person_id:

@@ -223,10 +223,10 @@ document.querySelectorAll('[data-person]').forEach(el=>el.addEventListener('clic
 <script id="resource-allocation-heatmap-runtime">
 (function(){
   const allocationPeople=[
-    {name:'Aarav Menon',initials:'AM',counts:[2,1,0,3,1,2,0]},
-    {name:'Nisha Rao',initials:'NR',counts:[1,2,1,0,2,1,1]},
-    {name:'Kabir Shah',initials:'KS',counts:[0,1,2,1,0,2,1]},
-    {name:'Maya Iyer',initials:'MI',counts:[1,0,1,2,1,0,2]}
+    {name:'Site Operations',initials:'SO',counts:[5,4,3,6,4,2,1]},
+    {name:'CAD',initials:'CA',counts:[3,2,4,2,3,1,0]},
+    {name:'SkyStation Operations',initials:'SK',counts:[4,3,2,4,2,2,1]},
+    {name:'Managers',initials:'MG',counts:[1,1,0,1,1,0,0]}
   ];
   const workGroups=[
     {label:'Inspection',counts:[1,0,2,1,0,2,1]},
@@ -238,11 +238,11 @@ document.querySelectorAll('[data-person]').forEach(el=>el.addEventListener('clic
   function buttonWindow(label,days,active){return `<button type="button" data-allocation-window="${days}" class="${active?'active':''}">${label}</button>`}
   function renderResourceAllocation(){
     const host=document.querySelector('#resourceAllocationPanel'); if(!host)return;
-    const header=`<div class="cell header">Person / date</div>${labels.map(label=>`<div class="cell header">${label}</div>`).join('')}`;
-    const body=allocationPeople.map(person=>`<div class="cell person"><i>${person.initials}</i><span>${person.name}</span></div>${person.counts.map((count,index)=>`<button type="button" class="cell allocation-cell" data-count="${count}" data-allocation-person="${person.name}" data-allocation-date="${labels[index]}"><b>${count||'·'}</b><small>${count?'assigned':'no record'}</small></button>`).join('')}`).join('');
-    host.innerHTML=`<div class="allocation-head"><div><div class="eyebrow">Resource allocation</div><h2>Who is committed to what?</h2><span>Scheduled work by person and date · empty cells are not availability claims</span></div><div class="allocation-controls">${buttonWindow('Week',7,true)}${buttonWindow('Month',30,false)}</div></div><div class="allocation-source">SYNTHETIC PREVIEW · counts represent source-backed work records, not utilization or capacity</div><div class="allocation-collision">Review signal: cells with 3+ records need inspection for scheduling collisions.</div><div class="allocation-grid-wrap"><div class="allocation-grid">${header}${body}</div></div>`;
+    const header=`<div class="cell header">Team / date</div>${labels.map(label=>`<div class="cell header">${label}</div>`).join('')}`;
+    const body=allocationPeople.map(person=>`<div class="cell person"><i>${person.initials}</i><span>${person.name}</span></div>${person.counts.map((count,index)=>`<button type="button" class="cell allocation-cell" data-count="${count}" data-allocation-team="${person.name}" data-allocation-date="${labels[index]}"><b>${count||'·'}</b><small>${count?'work records':'no record'}</small></button>`).join('')}`).join('');
+    host.innerHTML=`<div class="allocation-head"><div><div class="eyebrow">Resource allocation</div><h2>Team coverage by day</h2><span>Daily Work Tracker occurrences grouped by Crew Repository team</span></div><div class="allocation-controls">${buttonWindow('Week',7,true)}${buttonWindow('Month',30,false)}</div></div><div class="allocation-source">SYNTHETIC PREVIEW · counts represent dated Daily Work Tracker records, not utilization or capacity</div><div class="allocation-collision">Review signal: cells with 3+ records need inspection for scheduling collisions.</div><div class="allocation-grid-wrap"><div class="allocation-grid">${header}${body}</div></div>`;
     host.querySelectorAll('[data-allocation-window]').forEach(button=>button.addEventListener('click',()=>{host.querySelectorAll('[data-allocation-window]').forEach(item=>item.classList.toggle('active',item===button));host.querySelector('.allocation-source').textContent=`SYNTHETIC PREVIEW · ${button.dataset.allocationWindow}-day window · counts represent source-backed work records, not utilization or capacity`; }));
-    host.querySelectorAll('[data-allocation-person]').forEach(cell=>cell.addEventListener('click',()=>{const count=cell.dataset.count;if(count==='0')return;const title=`${cell.dataset.allocationPerson} · ${cell.dataset.allocationDate}`;if(typeof openNotice==='function')openNotice(title,'Crew overview · resource allocation','Source-backed worklist',`${count} scheduled work record${count==='1'?'':'s'} in the selected preview cell. Open the protected worklist to inspect source IDs, status, and evidence.`)}));
+    host.querySelectorAll('[data-allocation-team]').forEach(cell=>cell.addEventListener('click',()=>{const count=cell.dataset.count;if(count==='0')return;const title=`${cell.dataset.allocationTeam} · ${cell.dataset.allocationDate}`;if(typeof openNotice==='function')openNotice(title,'Crew overview · team resource allocation','Source-backed daily worklist',`${count} dated Daily Work Tracker record${count==='1'?'':'s'} in this team/date cell. Open the protected worklist to inspect source IDs, people, status, and evidence.`)}));
   }
   function renderPersonHeatmap(){
     const host=document.querySelector('#personWorkHeatmap'); if(!host)return;

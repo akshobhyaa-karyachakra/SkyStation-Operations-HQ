@@ -64,3 +64,13 @@ def test_person_heatmap_marks_unassigned_review_and_does_not_infer_utilization()
     assert result["rows"][0]["cells"][0]["count"] == 1
     assert "utilization" not in result
     assert result["unassigned_review_count"] == 1
+
+
+def test_resource_calendar_can_group_daily_occurrences_by_team():
+    result = build_resource_calendar([
+        {"source_item_id": "a", "work_date": "2026-09-20", "owner": [{"monday_user_id": "1", "name": "Aarya"}], "team": "CAD", "status": "Done"},
+        {"source_item_id": "b", "work_date": "2026-09-20", "owner": [{"monday_user_id": "2", "name": "Sai"}], "team": "CAD", "status": "In Progress"},
+    ], "2026-09-20", "2026-09-20", scope="team")
+    assert result["scope"] == "team"
+    assert result["rows"][0]["owner_id"] == "team:CAD"
+    assert result["rows"][0]["cells"][0]["count"] == 2

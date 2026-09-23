@@ -88,8 +88,15 @@ def _allocation_item(record: dict[str, Any], shared: bool) -> dict[str, Any]:
     }
 
 
-def build_resource_calendar(records: list[dict[str, Any]], start_date: str, end_date: str) -> dict[str, Any]:
-    """Build a date-by-owner allocation grid without inferring capacity."""
+def _teams(record: dict[str, Any]) -> list[str]:
+    raw = record.get("teams") or record.get("team") or []
+    if isinstance(raw, str):
+        return [raw] if raw else []
+    return [str(team) for team in raw if team]
+
+
+def build_resource_calendar(records: list[dict[str, Any]], start_date: str, end_date: str, scope: str = "person") -> dict[str, Any]:
+    """Build a date-by-owner or date-by-team allocation grid without inferring capacity."""
     dates = _date_range(start_date, end_date)
     date_index = {value: index for index, value in enumerate(dates)}
     grouped: dict[str, dict[str, Any]] = {}
@@ -99,11 +106,14 @@ def build_resource_calendar(records: list[dict[str, Any]], start_date: str, end_
         if work_date not in date_index:
             continue
         owners = _owners(record)
-        if not owners:
+        keys = [{"id": owner["id"], "name": owner["name"]} for owner in owners]
+        if scope == "team":
+            keys = [{"id": f"team:{team}", "name": team} for team in _teams(record)]
+        if not keys:
             unassigned += 1
             continue
         shared = len(owners) > 1
-        for owner in owners:
+        for owner in keys:
             row = grouped.setdefault(owner["id"], {"owner_id": owner["id"], "owner_name": owner["name"], "cells": [[] for _ in dates]})
             row["cells"][date_index[work_date]].append(_allocation_item(record, shared))
     rows = []
@@ -119,7 +129,7 @@ def build_resource_calendar(records: list[dict[str, Any]], start_date: str, end_
             })
         row["cells"] = cells
         rows.append(row)
-    return {"schema_version": "resource_calendar.v1", "data_state": "current", "start_date": start_date, "end_date": end_date, "dates": dates, "rows": rows, "unassigned_review_count": unassigned, "no_capacity_inference": True}
+    return {"schema_version": "resource_calendar.v1", "data_state": "current", "scope": scope, "start_date": start_date, "end_date": end_date, "dates": dates, "rows": rows, "unassigned_review_count": unassigned, "no_capacity_inference": True}
 
 
 def build_person_work_heatmap(records: list[dict[str, Any]], person_id: str, start_date: str, end_date: str, grouping: str = "category") -> dict[str, Any]:

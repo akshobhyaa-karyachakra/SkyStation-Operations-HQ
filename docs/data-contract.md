@@ -147,10 +147,11 @@ Customer endpoints receive only approved customer fields and source-derived oper
 
 ## Resource allocation and person work projections
 
-The protected allocation projections derive from normalized `work_item` records and preserve source IDs and People IDs.
+The protected allocation projections derive from **6_Daily Work Tracker** (`5031430709`) dated occurrences, joined to durable definitions in **Work Repository** (`5029561760`) and team context from **SkyStation Crew Repository** (`5030902067`). Work Repository is the one-time activity repository; it is not the daily allocation source.
 
-- `resource_calendar.v1` groups dated records by owner and date, returns status counts, shared-assignment counts, source item drilldowns, and `unassigned_review_count`.
-- `person_work_heatmap.v1` scopes the same records to one `person_id`, groups by work type or customer, and returns dated counts and source item drilldowns.
-- Empty cells mean no matching source record; they never mean leave, availability, idle time, or capacity.
+- `daily_work_tracker.v1` preserves the Daily Work Tracker item ID, Work Date, People IDs, Daily Status, Work Type, Priority, effort fields, evidence, and the linked Work Repository item ID.
+- `resource_calendar.v1` groups dated daily records by Crew Repository team for the overview. Person IDs remain available inside each team’s drilldown.
+- `person_work_heatmap.v1` scopes the same daily records to one `person_id`, groups by work type or customer, and returns dated counts and source item drilldowns.
+- Empty cells mean no matching daily occurrence; they never mean leave, availability, idle time, or capacity.
 - Counts are evidence density only. The portal must not derive utilization, productivity, ranking, or performance from them.
-- Both projections expose source freshness and fail closed with `unavailable` or `needs_review` when the work snapshot cannot be trusted.
+- Both projections expose source freshness and fail closed with `unavailable` or `needs_review` when the daily snapshot or joins cannot be trusted.

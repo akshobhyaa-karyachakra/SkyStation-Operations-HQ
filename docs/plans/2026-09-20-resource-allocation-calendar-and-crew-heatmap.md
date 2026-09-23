@@ -4,7 +4,7 @@
 
 **Goal:** Add a source-grounded resource allocation calendar to the Central Dashboard overview and a person-level work heatmap to the protected Crew Deep Dive without inventing utilization or performance metrics.
 
-**Architecture:** The Central Dashboard will show a compact, read-only allocation calendar for the selected reporting window, summarizing dated work by person, team, customer/site, and operational state. The Crew Deep Dive will reuse the same normalized work records to show one selected person’s activity density by date and work type, with click-through to the underlying worklist. Monday remains the source; the portal normalizes records behind the protected API and renders explicit stale, unavailable, needs-review, and synthetic-preview states.
+**Architecture:** The Central Dashboard will show a compact, read-only allocation calendar for the selected reporting window, summarizing dated **Daily Work Tracker** occurrences by Crew Repository team, with people available inside each team’s drilldown. The Crew Deep Dive will reuse the same normalized daily occurrences to show one selected person’s activity density by date and work type. **Work Repository** is the durable one-time activity definition layer; it is never treated as the daily execution calendar. Monday remains the source; the portal normalizes records behind the protected API and renders explicit stale, unavailable, needs-review, and synthetic-preview states.
 
 **Tech Stack:** Existing `rebuild-preview.html` preview shell, protected `scripts/portal_server.py`, normalized JSON snapshots under `data/`, pure aggregation in `scripts/portal_metrics.py`, and pytest coverage in `tests/`.
 
@@ -12,18 +12,17 @@
 
 ## Product decisions
 
-### Central Dashboard: Resource Allocation Calendar
+**Central Dashboard: Resource Allocation Calendar**
 
-Place this in the Central Dashboard overview, alongside the operating pulse and before secondary detail panels. Its question is: **who is committed to what, on which dates, and where are collisions or uncovered dates?**
+Place this in the Central Dashboard overview, alongside the operating pulse and before secondary detail panels. Its question is: **which teams are carrying dated work, on which dates, and where are collisions or uncovered dates?**
 
 - Default window: current week, with Today / This week / This month controls.
-- Rows: crew members or operational teams, depending on the access context.
-- Columns: dates in the selected window.
-- Cell content: count of scheduled work items, with compact state markers for planned, in progress, blocked, completed, and needs review.
-- Cell click: opens a filtered allocation worklist showing item name, work date, customer/site, owner(s), status, source board, and evidence link where available.
-- Collision signal: multiple concurrent assignments on a person/date are flagged as a review state, not labelled as overload unless a capacity rule exists.
-- Empty cell: means no matching source record in the selected window; it must not be described as leave, availability, or idle time.
-- Public/client-safe mode: show aggregate resource coverage only; person names, owners, and internal work rows remain protected.
+- Rows: Crew Repository teams; people appear in the team drilldown, not as the primary calendar rows.
+- Source: dated occurrences from **6_Daily Work Tracker** (`5031430709`), joined to durable definitions in **Work Repository** (`5029561760`) and team context from **SkyStation Crew Repository** (`5030902067`).
+- Cell content: count of daily work occurrences, with compact state markers for planned, in progress, blocked, completed, and needs review.
+- Cell click: opens a filtered allocation worklist showing item name, work date, customer/site, owner(s), team, status, source board, repository relation, and evidence link where available.
+- Collision signal: multiple assignments in a team/date are flagged as a review state, not labelled as overload unless a capacity rule exists.
+- Empty cell: means no matching Daily Work Tracker occurrence in the selected window; it must not be described as leave, availability, or idle time.
 
 ### Crew Deep Dive: Person Work Heatmap
 

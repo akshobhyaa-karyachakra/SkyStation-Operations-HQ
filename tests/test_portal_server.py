@@ -36,7 +36,17 @@ def protected_server(tmp_path, monkeypatch):
             "category": "Inspection", "status": "Done", "data_state": "current",
         }],
     }))
-    monkeypatch.setattr(portal_server, "SNAPSHOTS", {"/api/inventory": snapshot, "/api/crew": crew_snapshot, "/api/work-tracker": work_snapshot})
+    daily_snapshot = tmp_path / "daily_work_tracker.snapshot.json"
+    daily_snapshot.write_text(json.dumps({
+        "schema_version": "daily_work_tracker.v1",
+        "records": [{
+            "source_item_id": "daily-1", "name": "Example daily work", "work_date": "2026-09-20",
+            "owner": [{"monday_user_id": "1", "name": "Example Person", "kind": "person"}],
+            "teams": ["Site Operations"], "team": "Site Operations", "work_type": "One Time",
+            "status": "Done", "data_state": "current",
+        }],
+    }))
+    monkeypatch.setattr(portal_server, "SNAPSHOTS", {"/api/inventory": snapshot, "/api/crew": crew_snapshot, "/api/work-tracker": work_snapshot, "/api/daily-work-tracker": daily_snapshot})
     portal_store = tmp_path / "crew_portal.json"
     monkeypatch.setattr(portal_server, "CREW_PORTAL_STORE", portal_store)
     monkeypatch.setattr(portal_server, "CREW_PORTAL_FILES", tmp_path / "crew-files")
@@ -118,7 +128,7 @@ def test_resource_calendar_returns_source_backed_rows(protected_server):
     status, body = request(server, "/api/resource-calendar?start_date=2026-09-20&end_date=2026-09-20", {"Authorization": "Bearer test-token"})
     assert status == 200
     assert body["schema_version"] == "resource_calendar.v1"
-    assert body["rows"][0]["owner_id"] == "1"
+    assert body["rows"][0]["owner_id"] == "team:Site Operations"
 
 
 def test_person_heatmap_returns_selected_person_context(protected_server):
