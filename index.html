@@ -15,7 +15,7 @@
   <main class="entry">
     <div class="topline"><div class="brand"><span class="brand-mark">SK</span> SKYLARK OPERATIONS INTELLIGENCE</div><div class="signal"><i></i> ENTRY SURFACE · READY</div></div>
     <section class="stage" aria-labelledby="title">
-      <div class="hero-scene" aria-label="Ambient Skylark drone scene"><video id="drone-video-a" class="is-active" muted autoplay playsinline preload="auto" poster="assets/patang-hero-master.png" src="assets/patang-cursor-scrub.mp4"></video><video id="drone-video-b" muted playsinline preload="auto" poster="assets/patang-hero-master.png" src="assets/patang-cursor-scrub.mp4"></video><div class="scene-shade" aria-hidden="true"></div><div class="scene-meta" aria-hidden="true"><span>SCENE 01</span><span>UIN U100001</span></div></div>
+      <div class="hero-scene" aria-label="Ambient Skylark drone scene"><video id="drone-video-a" class="is-active" muted autoplay playsinline preload="auto" poster="assets/patang-hero-master.png" src="assets/patang-cursor-scrub.mp4"></video><video id="drone-video-b" muted playsinline preload="auto" poster="assets/patang-hero-master.png" src="assets/patang-cursor-scrub.mp4"></video><div class="scene-shade" aria-hidden="true"></div></div>
       <p class="eyebrow">Skylark / Operations HQ</p>
       <h1 id="title">See the <em>operation clearly.</em></h1>
       <p>A shared view of the operation. Private tools for the team.</p>
@@ -24,7 +24,7 @@
         <a id="manager-entry" class="choice" href="login.html"><strong>Manager Vault</strong><span>For managers and leads</span></a>
       </div>
     </section>
-    <div class="foot"><span>U100001 · FIXED-WING OPERATIONS SIGNAL</span><span class="hint">AMBIENT FLIGHT LOOP · PUBLIC / PROTECTED VIEWS</span></div>
+    <div class="foot"><span>U100001 · FIXED-WING OPERATIONS SIGNAL</span></div>
   </main>
   <script>
     (()=>{const videos=[document.querySelector('#drone-video-a'),document.querySelector('#drone-video-b')];const managerEntry=document.querySelector('#manager-entry');let active=0,crossfading=false;function begin(){videos[active].play().catch(()=>{});if(matchMedia('(prefers-reduced-motion: reduce)').matches)videos[active].pause()}function fadeToNext(){if(crossfading)return;crossfading=true;const current=videos[active],next=videos[1-active];next.currentTime=0;next.play().catch(()=>{});next.classList.add('is-active');setTimeout(()=>{current.pause();current.classList.remove('is-active');active=1-active;crossfading=false},850)}videos.forEach(v=>v.addEventListener('timeupdate',()=>{if(v===videos[active]&&v.duration&&v.currentTime>v.duration-.95)fadeToNext()}));videos[0].addEventListener('loadedmetadata',begin,{once:true});if(location.hostname.endsWith('github.io'))managerEntry.href='manager-vault-demo-login.html';})();
