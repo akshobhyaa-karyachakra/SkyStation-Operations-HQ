@@ -1,8 +1,8 @@
 # Business Logic Index
 
 Status: In review  
-Canonical logic source: existing Google Doc — URL pending confirmation from the owner.  
-Last reviewed: 2026-09-19
+Canonical logic source: [SkyStation Operations Intelligence — Complete Portal Logic and Data Contract](https://docs.google.com/document/d/1D9oBi6ytBPEfwH171Iup8_Cj2XE7uWfvGOAkPBMBhB8/edit).  
+Last reviewed: 2026-09-24
 
 This file indexes the existing business-logic Google Doc. It is not a duplicate rulebook. When the Google Doc changes, update this index and the affected repository contracts in the same work slice.
 
