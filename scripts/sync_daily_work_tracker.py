@@ -58,6 +58,10 @@ query($board_id: ID!, $cursor: String) {
 }
 """
 
+USERS_QUERY = """
+query { users(limit: 500) { id name } }
+"""
+
 
 def request(token: str, query: str, board_id: str, cursor: str | None) -> dict:
     body = json.dumps({"query": query, "variables": {"board_id": board_id, "cursor": cursor}}).encode()
@@ -69,6 +73,18 @@ def request(token: str, query: str, board_id: str, cursor: str | None) -> dict:
     if payload.get("errors"):
         raise RuntimeError("Monday query failed: " + "; ".join(e.get("message", "unknown error") for e in payload["errors"]))
     return payload
+
+
+def request_users(token: str) -> list[dict]:
+    body = json.dumps({"query": USERS_QUERY, "variables": {}}).encode()
+    req = urllib.request.Request(API_URL, data=body, headers={
+        "Authorization": token, "Content-Type": "application/json", "API-Version": API_VERSION,
+    })
+    with urllib.request.urlopen(req, timeout=60) as response:
+        payload = json.load(response)
+    if payload.get("errors"):
+        raise RuntimeError("Monday user query failed: " + "; ".join(e.get("message", "unknown error") for e in payload["errors"]))
+    return payload.get("data", {}).get("users", [])
 
 
 def fetch_all(token: str, query: str, board_id: str) -> tuple[dict, list[dict]]:
@@ -100,18 +116,22 @@ def _linked(column: dict) -> list[dict]:
             for item in (column.get("linked_items") or [])]
 
 
-def _crew_teams(crew_items: list[dict]) -> dict[str, str]:
+def _crew_teams(crew_items: list[dict], users: list[dict] | None = None) -> dict[str, str]:
+    users_by_name = {str(user.get("name", "")).casefold(): str(user["id"]) for user in (users or []) if user.get("name")}
+    if "srihari@skylarkdrones.com" in users_by_name:
+        users_by_name["srihari s"] = users_by_name["srihari@skylarkdrones.com"]
     teams = {}
     for item in crew_items:
         columns = _columns(item)
         team = columns.get("lookup_mm792kmk", {}).get("text") or (item.get("group") or {}).get("title")
-        if team:
-            teams[str(item["id"])] = team
+        person_id = users_by_name.get(str(item.get("name", "")).casefold())
+        if team and person_id:
+            teams[person_id] = team
     return teams
 
 
-def normalize(board: dict, raw_items: list[dict], crew_items: list[dict] | None = None) -> dict:
-    team_by_person = _crew_teams(crew_items or [])
+def normalize(board: dict, raw_items: list[dict], crew_items: list[dict] | None = None, users: list[dict] | None = None) -> dict:
+    team_by_person = _crew_teams(crew_items or [], users)
     records = []
     for item in raw_items:
         columns = _columns(item)
@@ -184,7 +204,8 @@ def main() -> int:
     try:
         board, daily_items = fetch_all(token, DAILY_QUERY, DAILY_BOARD_ID)
         _, crew_items = fetch_all(token, CREW_QUERY, CREW_BOARD_ID)
-        snapshot = normalize(board, daily_items, crew_items)
+        users = request_users(token)
+        snapshot = normalize(board, daily_items, crew_items, users)
         errors = validate(snapshot)
         if errors:
             for error in errors: print("VALIDATION_ERROR: " + error, file=sys.stderr)

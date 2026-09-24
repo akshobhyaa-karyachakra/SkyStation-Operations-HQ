@@ -29,7 +29,7 @@ def daily_item(owner_ids=("7",), status="Done", work_date="2026-09-20", relation
 
 
 def test_daily_tracker_normalizes_repository_relation_and_team_context():
-    record = module.normalize({"name": "6_Daily Work Tracker"}, [daily_item()], [{"id": "7", "column_values": [{"id": "lookup_mm792kmk", "text": "SkyStation Operations"}]}])["records"][0]
+    record = module.normalize({"name": "6_Daily Work Tracker"}, [daily_item()], [{"id": "crew-7", "name": "Aarya Vira", "group": {"title": "SkyStation Operations"}, "column_values": [{"id": "lookup_mm792kmk", "text": None}]}], [{"id": "7", "name": "Aarya Vira"}])["records"][0]
     assert record["stage"] == "daily_execution"
     assert record["work_repository_item_id"] == "900"
     assert record["team"] == "SkyStation Operations"
@@ -45,8 +45,15 @@ def test_daily_tracker_flags_missing_relation_and_team():
 
 def test_daily_tracker_preserves_multiple_people():
     record = module.normalize({}, [daily_item(owner_ids=("7", "8"))], [
-        {"id": "7", "column_values": [{"id": "lookup_mm792kmk", "text": "CAD"}]},
-        {"id": "8", "column_values": [{"id": "lookup_mm792kmk", "text": "SkyStation Operations"}]},
-    ])["records"][0]
+        {"id": "crew-7", "name": "Aarya Vira", "group": {"title": "CAD"}, "column_values": [{"id": "lookup_mm792kmk", "text": None}]},
+        {"id": "crew-8", "name": "Sai Akshobhyaa Vrinda", "group": {"title": "SkyStation Operations"}, "column_values": [{"id": "lookup_mm792kmk", "text": None}]},
+    ], [{"id": "7", "name": "Aarya Vira"}, {"id": "8", "name": "Sai Akshobhyaa Vrinda"}])["records"][0]
     assert record["owner_ids"] == ["7", "8"]
     assert record["teams"] == ["CAD", "SkyStation Operations"]
+
+
+def test_daily_tracker_uses_verified_user_name_join_for_crew_groups():
+    record = module.normalize({}, [daily_item()], [
+        {"id": "crew-7", "name": "Srihari S", "group": {"title": "CAD"}, "column_values": [{"id": "lookup_mm792kmk", "text": None}]},
+    ], [{"id": "7", "name": "srihari@skylarkdrones.com"}])["records"][0]
+    assert record["team"] == "CAD"
