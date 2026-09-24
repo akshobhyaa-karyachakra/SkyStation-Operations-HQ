@@ -49,11 +49,11 @@ The browser never calls Monday directly. Stable source IDs and explicit relation
 - Documentation roadmap commit: `51c057e`.
 - Full documentation baseline commit: `728d74f`.
 - Latest UI publication before the documentation baseline: commit `0d27e67`.
-- Production HTTPS reverse proxy, runtime secret configuration, scheduler, Google OAuth, and manager allowlist remain external configuration work.
+- Production HTTPS reverse proxy, runtime secret configuration, scheduler, and Manager Vault authentication remain external configuration work. The selected authentication direction is a server-side username/password user store with password hashing, short-lived HttpOnly sessions, reset tokens, lockout/rate limiting, CSRF protection, generic authentication errors, manager allowlisting, and audit events. Passwords and reset tokens must never enter static HTML, Git, snapshots, logs, or Discord.
 
 ## Architecture decisions required next
 
 - Confirm production hosting/runtime for `portal_server.py`.
 - Confirm snapshot storage and retention.
-- Confirm Google OAuth production origin and manager group.
+- Confirm production auth database location, account-provisioning/reset procedure, session secret rotation, cookie policy, and manager allowlist.
 - Confirm whether Public Wallboard reads a protected public projection at runtime or remains a static preview until that adapter is deployed.

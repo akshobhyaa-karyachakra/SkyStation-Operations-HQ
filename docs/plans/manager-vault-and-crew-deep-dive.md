@@ -22,7 +22,8 @@
 ### Manager Vault
 
 - Separate protected route and navigation shell.
-- Requires server-side authentication before returning protected HTML data or API responses.
+- Requires server-side username/password authentication before returning protected HTML data or API responses.
+- Uses a server-side user store with strong password hashing, generic login errors, rate limiting/lockout, reset tokens, short-lived HttpOnly sessions, CSRF protection, manager allowlisting, and audit events.
 - Uses role-based authorization: manager, approved manager/editor, and read-only approved personnel.
 - Shows the six management tabs only after authorization succeeds.
 - Records login/session events and every protected mutation in an audit trail.
