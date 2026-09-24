@@ -21,13 +21,15 @@
       <p>The public dashboard shows approved operational signals. The Manager Vault opens protected crew, evidence, review, and control surfaces.</p>
       <div class="choices" role="navigation" aria-label="Portal destinations">
         <a class="choice public" href="public-wallboard.html"><strong>Public Dashboard</strong><span>Open the customer-safe operating picture.</span></a>
-        <a class="choice" href="login.html"><strong>Manager Vault</strong><span>Sign in to access protected management surfaces.</span></a>
+        <a id="manager-entry" class="choice" href="login.html"><strong>Manager Vault</strong><span>Sign in to access protected management surfaces.</span></a>
       </div>
     </section>
     <div class="foot"><span>U100001 · FIXED-WING OPERATIONS SIGNAL</span><span class="hint">Move your pointer to steer the gimbal</span></div>
   </main>
   <script>
     (()=>{const c=document.querySelector('#drone'),x=c.getContext('2d'),dpr=Math.min(2,devicePixelRatio||1);let tx=.5,ty=.5,cx=.5,cy=.5;x.scale(dpr,dpr);const W=1080,H=680;function pointer(e){const r=c.getBoundingClientRect();tx=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));ty=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))}addEventListener('pointermove',pointer,{passive:true});function draw(){cx+=(tx-cx)*.08;cy+=(ty-cy)*.08;x.clearRect(0,0,W,H);const px=540,py=245,lookX=px+(cx-.5)*110,lookY=py+(cy-.5)*58;x.save();x.translate(px,py);x.rotate((cx-.5)*.09);x.globalAlpha=.16;x.strokeStyle='#65c1ae';x.lineWidth=2;x.beginPath();x.ellipse(0,210,300,42,0,0,Math.PI*2);x.stroke();x.restore();x.save();x.translate(px,py);x.rotate((cx-.5)*.055);x.fillStyle='#d8e0dd';x.beginPath();x.moveTo(-250,10);x.lineTo(-72,-18);x.lineTo(-12,-105);x.lineTo(25,-106);x.lineTo(60,-20);x.lineTo(257,10);x.lineTo(60,38);x.lineTo(21,118);x.lineTo(-15,116);x.lineTo(-72,38);x.closePath();x.fill();x.fillStyle='#596a70';x.beginPath();x.moveTo(-170,10);x.lineTo(-30,-4);x.lineTo(-10,-72);x.lineTo(16,-72);x.lineTo(29,-3);x.lineTo(170,10);x.lineTo(29,23);x.lineTo(10,82);x.lineTo(-12,82);x.lineTo(-30,23);x.closePath();x.fill();x.fillStyle='#f05b28';x.fillRect(-130,7,260,7);x.fillStyle='#65c1ae';x.fillRect(-18,-55,36,10);x.restore();x.save();x.translate(lookX,lookY);x.fillStyle='#1a252b';x.strokeStyle='#f05b28';x.lineWidth=5;x.beginPath();x.arc(0,0,35,0,Math.PI*2);x.fill();x.stroke();x.fillStyle='#65c1ae';x.beginPath();x.arc((cx-.5)*12,(cy-.5)*9,12,0,Math.PI*2);x.fill();x.restore();x.strokeStyle='#f05b2830';x.lineWidth=1;x.beginPath();x.moveTo(540,310);x.lineTo(lookX,lookY+35);x.stroke();requestAnimationFrame(draw)}draw()})();
+    const managerEntry=document.querySelector('#manager-entry');
+    if(location.hostname.endsWith('github.io')) managerEntry.href='manager-vault-demo-login.html';
   </script>
 </body>
 </html>
