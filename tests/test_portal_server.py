@@ -4,6 +4,7 @@ import json
 import sys
 import threading
 import time
+from http.cookies import SimpleCookie
 from pathlib import Path
 
 import pytest
@@ -53,6 +54,9 @@ def protected_server(tmp_path, monkeypatch):
     monkeypatch.setattr(portal_server, "TOKEN", "test-token")
     monkeypatch.setattr(portal_server, "DEV_LOCAL", False)
     monkeypatch.setattr(portal_server, "MAX_AGE_SECONDS", 86400)
+    monkeypatch.setattr(portal_server, "AUTH_DB", tmp_path / "auth.sqlite3")
+    monkeypatch.setattr(portal_server, "SESSION_TTL_SECONDS", 900)
+    monkeypatch.setattr(portal_server, "AUTH_LOCKOUT_THRESHOLD", 3)
     server = portal_server.ThreadingHTTPServer(("127.0.0.1", 0), portal_server.Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -69,7 +73,11 @@ def request(server, path, headers=None):
     response = conn.getresponse()
     body = response.read()
     conn.close()
-    return response.status, json.loads(body)
+    try:
+        parsed = json.loads(body)
+    except json.JSONDecodeError:
+        parsed = body.decode()
+    return response.status, parsed
 
 
 def post_json(server, path, body, headers=None):
@@ -83,6 +91,31 @@ def post_json(server, path, body, headers=None):
     return response.status, json.loads(data)
 
 
+def post_response(server, path, body, headers=None):
+    payload = json.dumps(body).encode()
+    request_headers = {"Content-Type": "application/json", "Content-Length": str(len(payload)), **(headers or {})}
+    conn = http.client.HTTPConnection(*server.server_address, timeout=3)
+    conn.request("POST", path, body=payload, headers=request_headers)
+    response = conn.getresponse()
+    data = response.read()
+    headers = {}
+    for key, value in response.getheaders():
+        if key in headers:
+            headers[key] = headers[key] + [value] if isinstance(headers[key], list) else [headers[key], value]
+        else:
+            headers[key] = value
+    result = {"status": response.status, "headers": headers, "body": data}
+    conn.close()
+    return result
+
+
+def cookie_value(headers, name):
+    cookie = SimpleCookie()
+    values = headers.get("Set-Cookie", "")
+    if isinstance(values, list):
+        values = "\n".join(values)
+    cookie.load(values)
+    return cookie[name].value if name in cookie else None
 
 
 def test_inventory_requires_authentication(protected_server):
@@ -90,6 +123,59 @@ def test_inventory_requires_authentication(protected_server):
     status, body = request(server, "/api/inventory")
     assert status == 401
     assert body == {"error": "unauthorized"}
+
+
+def test_login_fails_closed_when_no_user_is_provisioned(protected_server):
+    server, _, _ = protected_server
+    result = post_response(server, "/api/auth/login", {"username": "manager", "password": "anything"})
+    assert result["status"] == 401
+    assert json.loads(result["body"]) == {"error": "invalid credentials"}
+    assert "Set-Cookie" not in result["headers"]
+
+
+def test_login_creates_session_and_protects_manager_shell(protected_server):
+    server, _, portal_server = protected_server
+    portal_server.provision_user(portal_server.AUTH_DB, "manager", "correct-password", "manager")
+    before, _ = request(server, "/manager-vault.html")
+    assert before == 302
+    result = post_response(server, "/api/auth/login", {"username": "manager", "password": "correct-password"})
+    assert result["status"] == 200
+    session = cookie_value(result["headers"], portal_server.SESSION_COOKIE_NAME)
+    csrf = cookie_value(result["headers"], portal_server.CSRF_COOKIE_NAME)
+    assert session and csrf
+    status, body = request(server, "/api/auth/session", {"Cookie": f"{portal_server.SESSION_COOKIE_NAME}={session}"})
+    assert status == 200
+    assert body["user"]["username"] == "manager"
+    conn = http.client.HTTPConnection(*server.server_address, timeout=3)
+    conn.request("GET", "/manager-vault.html", headers={"Cookie": f"{portal_server.SESSION_COOKIE_NAME}={session}"})
+    response = conn.getresponse(); html = response.read().decode(); conn.close()
+    assert response.status == 200
+    assert "Manager Vault" in html
+
+
+def test_wrong_password_is_generic_and_locks_after_threshold(protected_server):
+    server, _, portal_server = protected_server
+    portal_server.provision_user(portal_server.AUTH_DB, "manager", "correct-password", "manager")
+    for _ in range(3):
+        result = post_response(server, "/api/auth/login", {"username": "manager", "password": "wrong"})
+        assert result["status"] == 401
+        assert json.loads(result["body"]) == {"error": "invalid credentials"}
+    result = post_response(server, "/api/auth/login", {"username": "manager", "password": "correct-password"})
+    assert result["status"] == 401
+    assert json.loads(result["body"]) == {"error": "invalid credentials"}
+
+
+def test_logout_revokes_session(protected_server):
+    server, _, portal_server = protected_server
+    portal_server.provision_user(portal_server.AUTH_DB, "manager", "correct-password", "manager")
+    result = post_response(server, "/api/auth/login", {"username": "manager", "password": "correct-password"})
+    session = cookie_value(result["headers"], portal_server.SESSION_COOKIE_NAME)
+    csrf = cookie_value(result["headers"], portal_server.CSRF_COOKIE_NAME)
+    headers = {"Cookie": f"{portal_server.SESSION_COOKIE_NAME}={session}; {portal_server.CSRF_COOKIE_NAME}={csrf}", "X-CSRF-Token": csrf}
+    logout = post_response(server, "/api/auth/logout", {}, headers)
+    assert logout["status"] == 200
+    status, _ = request(server, "/api/auth/session", {"Cookie": f"{portal_server.SESSION_COOKIE_NAME}={session}"})
+    assert status == 401
 
 
 def test_inventory_authorized_response_is_current(protected_server):

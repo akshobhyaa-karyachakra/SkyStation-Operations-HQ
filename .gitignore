@@ -12,4 +12,6 @@ data/workflow_network.snapshot.json
 data/customer_repository_billing.snapshot.json
 data/crew_portal.records.json
 data/crew_portal_files/
+data/*.sqlite3
+data/crew-1to1-files/
 __pycache__/
