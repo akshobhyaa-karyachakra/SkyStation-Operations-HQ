@@ -497,20 +497,22 @@ The public API should never return raw Monday board IDs, raw item IDs, People ID
 
 ---
 
-## 11. Decisions needed from Sai before the next build
+## 11. Decisions assumed for the current wallboard build
 
-For each page, specify:
+The supplied wallboard mockups and build brief now provide the page-specific direction for the six-screen public preview. This implementation assumes:
 
-1. The visual metaphor or layout direction.
-2. The one primary question the first viewport must answer.
-3. The exact metrics and denominator.
-4. The source-backed fields allowed in the public projection.
-5. The interpretation sentence or rule.
-6. The states that should show as current, stale, review, unavailable, or no data.
-7. Any animation, cycling, or interaction behavior.
-8. Any public-safe redactions beyond the baseline above.
+1. **Primary Pulse signal:** execution rate, calculated as flown ÷ scheduled, with both numerator and denominator visible.
+2. **T+1 timeliness:** remains visibly pending approval; production must suppress the percentage until the contract is approved.
+3. **Region granularity:** state-level aggregates only, rendered as abstract tiles without coordinates, pins, or real boundary outlines.
+4. **Timing:** 20 seconds per screen, 600 ms opacity crossfade, 5-minute refresh cadence, and a 2-hour stale threshold per source.
+5. **State model:** current, stale, partial, needs_review, unavailable, no_data, and awaiting_confirmation are distinct treatments; unavailable never falls back to fixture values.
+6. **Fixture boundary:** static GitHub Pages uses `data/wallboard-fixture.json`, labels the rail `SYNTHETIC PREVIEW`, and never calls protected sources.
+7. **Runtime boundary:** when `window.SKYLARK_API_BASE` is configured, the client requests only `/api/public/wallboard/{projection}` and fails closed if the API is unavailable.
+8. **Crew labels:** the five safe aggregate team labels from the supplied brief are used; no individual identity, schedule, workload, ranking, or performance signal is public.
+9. **Public content:** no customer names, site names, coordinates, serials, board/item identifiers, raw links, internal notes, or protected source vocabulary is rendered.
+10. **Interaction:** arrow keys, number keys 1–6, Space pause, hover pause, visibility pause/restart, hash deep links, and `?screen=3&cycle=0` kiosk pinning are supported.
 
-Until those directions arrive, the current public wallboard should be treated as a disposable placeholder for replacement, not as the final product design.
+The build remains a synthetic preview until a server-side public projection API is deployed and its contract is verified. Sai's future changes to any page's question, metric, source, denominator, or visual metaphor supersede these defaults.
 
 ---
 
