@@ -1,0 +1,82 @@
+{
+  "schema_version": "public-wallboard.card-contract.v1",
+  "logic_source": {
+    "type": "google_doc",
+    "url": "https://docs.google.com/document/d/1D9oBi6ytBPEfwH171Iup8_Cj2XE7uWfvGOAkPBMBhB8/edit",
+    "role": "implementation_contract_only",
+    "operational_source": "Monday",
+    "browser_access": false
+  },
+  "refresh": {
+    "interval_seconds": 300,
+    "timezone": "Asia/Kolkata",
+    "states": ["current", "stale", "unavailable", "needs_review", "partial", "no_data", "awaiting_confirmation"]
+  },
+  "screens": [
+    {
+      "id": "operations-pulse",
+      "order": 0,
+      "question": "What is the aggregate operational health and where does attention sit?",
+      "cards": [
+        {"id":"operational-health","sources":["Flight Operations","Processing and QA","Report Submission","validation_issues"],"rule":"count unique chain IDs with confirmed attention evidence; planning-only rows excluded"},
+        {"id":"reports","sources":["Report Submission","Flight Operations"],"rule":"accepted report evidence and Flight Date + 1 deadline; missing dates are deadline_unknown"},
+        {"id":"attention","sources":["Flight Operations","Processing and QA","Report Submission","validation_issues"],"rule":"deduplicate by chain and retain blocked, late, missing-evidence, unresolved-lineage, and stale states"},
+        {"id":"execution-rate","sources":["Flight Operations"],"rule":"executed_flights / planned_flights; show numerator and denominator; zero denominator is no_data"}
+      ]
+    },
+    {
+      "id": "delivery-flow",
+      "order": 1,
+      "question": "Where does Plan → Execution → Processing/QA → Report → Client-ready break?",
+      "cards": [
+        {"id":"handoff-chain","sources":["Activity Repository","Flight Operations","Processing and QA","Report Submission"],"rule":"edges require explicit relation IDs; missing edges are unresolved lineage"},
+        {"id":"stage-health","sources":["Flight Operations","Processing and QA","Report Submission"],"rule":"return source_count, confirmed_handoff_count, exception_count, missing_evidence_count"},
+        {"id":"evidence-queue","sources":["validation_issues","Flight Operations","Processing and QA","Report Submission"],"rule":"review queue only; never convert review count into performance"}
+      ]
+    },
+    {
+      "id": "crew-resource-pulse",
+      "order": 2,
+      "question": "What is the aggregate approved crew presence state?",
+      "cards": [
+        {"id":"active-crew-presence","sources":["Crew Repository"],"rule":"use explicit Availability and active directory state; blank is awaiting_confirmation"},
+        {"id":"presence-mix","sources":["Crew Repository"],"rule":"aggregate approved team context only; no work-count inference"},
+        {"id":"presence-source-state","sources":["snapshot_manifest","quality_issue"],"rule":"show current/stale/unavailable/needs_review visibly"}
+      ]
+    },
+    {
+      "id": "geographic-operations",
+      "order": 3,
+      "question": "What is happening across approved operating regions?",
+      "cards": [
+        {"id":"regional-operating-grid","sources":["Flight Operations","Report Submission","explicit customer/site relations"],"rule":"region/site aggregates require explicit relations; location text alone is insufficient"},
+        {"id":"sites-complete","sources":["Flight Operations","Report Submission"],"rule":"accepted completion and report evidence only"},
+        {"id":"field-constraints","sources":["Flight Operations","Incident Logs","validation_issues"],"rule":"aggregate confirmed blocker/incident/review states only"}
+      ]
+    },
+    {
+      "id": "reporting-outcomes",
+      "order": 4,
+      "question": "What is the reporting cadence and outcome state?",
+      "cards": [
+        {"id":"reporting-cadence","sources":["Report Submission","Flight Operations"],"rule":"authoritative Flight Operations Scheduled Date and Report Submission dates"},
+        {"id":"submitted","sources":["Report Submission"],"rule":"Submission Status Done plus accepted report evidence"},
+        {"id":"t1-performance","sources":["Flight Operations","Report Submission"],"rule":"deadline is Flight Date + 1 calendar day; missing dates are review"},
+        {"id":"open-report-queue","sources":["Report Submission","validation_issues"],"rule":"missing/late/review records only; deduplicate by report item and explicit relation"}
+      ]
+    },
+    {
+      "id": "fleet-readiness",
+      "order": 5,
+      "question": "Which aggregate inventory assets are ready, held, or in review?",
+      "cards": [
+        {"id":"readiness-signal","sources":["SkyStation Inventory","Incident Logs","explicit customer/site relations"],"rule":"Good/operational plus no blocking evidence is ready; blank condition is review"},
+        {"id":"readiness-mix","sources":["SkyStation Inventory"],"rule":"reconcile operational, Needs Maintenance, Out of Service, and review to unique source item IDs"},
+        {"id":"inventory-v2-v3","sources":["SkyStation Inventory"],"rule":"show V2/V3 only when explicit model/version field or approved Type/model normalization exists; never infer from partial names"},
+        {"id":"maintenance-attention","sources":["SkyStation Inventory","Incident Logs"],"rule":"Needs Maintenance and Out of Service are exact source conditions; incident failure requires incident evidence"}
+      ]
+    }
+  ],
+  "public_boundary": ["aggregate counts", "approved region labels", "source state", "freshness", "denominators"],
+  "excluded_from_public": ["employee names", "customer names", "site names", "coordinates", "serial numbers", "Monday IDs", "board URLs", "internal notes", "blocker text", "billing values", "credentials", "tokens"]
+}

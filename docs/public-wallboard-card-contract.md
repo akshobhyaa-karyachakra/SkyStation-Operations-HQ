@@ -26,4 +26,4 @@ The wallboard is a public aggregate projection. Browser code must consume only t
 
 ## Google Docs / source logic
 
-The canonical business-logic document is referenced by `docs/business-logic-index.md`. Live Google Docs access is deliberately outside the public browser: it requires an authenticated server-side adapter and a published, redacted projection. Credentials, tokens, document IDs, and protected source rows must never be shipped to GitHub Pages or placed in visible wallboard markup.
+The canonical business-logic document is [the supplied Google Doc](https://docs.google.com/document/d/1D9oBi6ytBPEfwH171Iup8_Cj2XE7uWfvGOAkPBMBhB8/edit). It is an implementation contract only; Monday remains the operational source of truth. Live Google Docs access is deliberately outside the public browser: it requires an authenticated server-side adapter only if the Doc is used for configuration or logic metadata, while operational records still come from Monday. Credentials, tokens, document IDs, and protected source rows must never be shipped to GitHub Pages or placed in visible wallboard markup.
