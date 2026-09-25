@@ -14,7 +14,7 @@ with sync_playwright() as p:
         page.on('console', lambda msg: errors.append(msg.text) if msg.type == 'error' else None)
         page.goto(URL, wait_until='networkidle')
         page.wait_for_timeout(700)
-        box = page.locator('.stage').bounding_box()
+        box = page.locator('.tv').bounding_box()
         body = page.locator('body').evaluate('(e) => ({ width: e.scrollWidth, height: e.scrollHeight })')
         assert box and box['x'] >= -1 and box['y'] >= -1
         assert box['x'] + box['width'] <= width + 1
@@ -25,7 +25,7 @@ with sync_playwright() as p:
         for _ in range(5):
             page.keyboard.press('ArrowRight')
             page.wait_for_timeout(420)
-            assert page.locator('.wall-screen').count() == 1
+            assert page.locator('.tv').count() == 1
         assert not errors, errors
         print({'viewport': (width, height), 'stage': box, 'body': body, 'screens_checked': 6})
         page.close()
