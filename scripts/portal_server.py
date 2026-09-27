@@ -24,6 +24,7 @@ from urllib.parse import parse_qs, urlsplit
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from portal_metrics import build_metrics, build_person_work_heatmap, build_resource_calendar
 from backend.crew_availability import DEFAULT_DB, public_projection
+from backend.delivery import build_delivery_projection
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOTS = {
@@ -459,6 +460,19 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json(200, public_projection(month, Path(os.environ.get("CREW_AVAILABILITY_DB", DEFAULT_DB))))
             except (OSError, ValueError, sqlite3.Error):
                 self._json(503, {"error": "crew availability projection unavailable", "data_state": "needs_review"})
+            return
+        if request.path == "/api/public/delivery-summary":
+            start_date = (query.get("start_date") or [None])[0]
+            end_date = (query.get("end_date") or [None])[0]
+            sources = [ROOT / "data" / "flight_operations.snapshot.json", ROOT / "data" / "processing_qa.snapshot.json", ROOT / "data" / "report_submission.snapshot.json"]
+            if any(not p.exists() for p in sources):
+                self._json(503, {"error": "delivery source snapshots unavailable", "data_state": "unavailable"})
+                return
+            try:
+                snapshots = [json.loads(p.read_text()) for p in sources]
+                self._json(200, build_delivery_projection(*snapshots, start_date, end_date))
+            except (OSError, json.JSONDecodeError, TypeError, ValueError):
+                self._json(503, {"error": "delivery projection needs review", "data_state": "needs_review"})
             return
         if self.path == "/api/crew-portal/role-lenses":
             if not self._authorized():

@@ -45,6 +45,7 @@ The current runtime defines these snapshot endpoints in `scripts/portal_server.p
 - `/api/crew-portal/one-to-ones` — protected one-to-one projection.
 - `/api/public-status` — public source state, schema version, and update timestamp only.
 - `/api/public/crew-availability?month=YYYY-MM` — public date-level crew availability counts from the validated Crew Daily Availability projection; employee names and source IDs are excluded.
+- `/api/public/delivery-summary?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD` — public aggregate planned/flown/processed/submitted/customer-ready counts. Records without explicit cross-board relations remain in quality counts and are not silently treated as successful delivery.
 
 Snapshot endpoints return `401` when unauthorized, `503` with `data_state: unavailable` when no snapshot exists, `503` with `data_state: needs_review` when the snapshot is invalid, and `200` with the body plus `data_state` and `snapshot_updated_at` when valid/current or stale. The exact field schemas remain implementation-owned by each adapter and must be updated here when a schema is promoted for production use.
 
