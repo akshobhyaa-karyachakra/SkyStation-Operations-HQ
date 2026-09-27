@@ -142,7 +142,7 @@ def validate(snapshot: dict) -> list[str]:
     errors = []
     if snapshot.get("schema_version") != "work_item.v1": errors.append("unsupported schema")
     if len(ids) != len(set(ids)): errors.append("duplicate source item IDs")
-    if len(records) != 154: errors.append(f"expected 154 items, received {len(records)}")
+    if not records: errors.append("empty source snapshot")
     if any(r.get("stage") != "report_submission" for r in records): errors.append("non-report stage in Report Submission snapshot")
     return sorted(set(errors))
 

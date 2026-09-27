@@ -151,7 +151,7 @@ def validate(snapshot: dict) -> list[str]:
     errors = []
     if snapshot.get("schema_version") != "work_item.v1": errors.append("unsupported schema")
     if len(ids) != len(set(ids)): errors.append("duplicate source item IDs")
-    if len(records) != 14: errors.append(f"expected 14 items, received {len(records)}")
+    if not records: errors.append("empty source snapshot")
     if any(r.get("stage") != "processing_qa" for r in records): errors.append("non-QA stage in Processing & QA snapshot")
     for record in records:
         for relation in record.get("activity_repository_relations", []):

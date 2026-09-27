@@ -3,6 +3,7 @@ data/activity_repository.snapshot.json
 data/flight_operations.snapshot.json
 data/processing_qa.snapshot.json
 data/report_submission.snapshot.json
+data/snapshot-manifest.json
 data/site_activities.snapshot.json
 data/work_tracker.snapshot.json
 data/daily_work_tracker.snapshot.json

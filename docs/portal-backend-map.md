@@ -18,6 +18,8 @@ Monday / approved source
 
 The browser must never call Monday. Frontend fixtures are preview-only and must not silently replace an unavailable source snapshot.
 
+`sync_delivery_sources.py` is the first batch publisher: it runs the Flight Operations, Processing/QA, and Report Submission adapters in a temporary directory, validates each result, and replaces the three published snapshots only after all three succeed. A failed adapter leaves the previous published files unchanged.
+
 ## Domain inventory
 
 | Portal area | Primary source | Existing adapter | Current runtime state | Next implementation |
