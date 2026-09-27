@@ -41,10 +41,17 @@ def build_delivery_projection(flight_snapshot:dict, processing_snapshot:dict, re
         if len(p)>1: issues.append("duplicate_processing_relation")
         if len(r)>1: issues.append("duplicate_report_relation")
         flight=f[0] if f else None; proc=p[0] if p else None; report=r[0] if r else None
-        flown=bool(flight and flight.get("status") in DONE_FLIGHT|PARTIAL_FLIGHT)
-        processed=bool(proc and proc.get("status") in DONE_PROCESSING|PARTIAL_PROCESSING)
-        submitted=bool(report and report.get("status") in DONE_REPORT|PARTIAL_REPORT)
-        customer_ready=bool(report and report.get("delivery_status")=="Done" and submitted and not report.get("validation_issues"))
+        flight_current=bool(flight and flight.get("data_state", "current") == "current")
+        processing_current=bool(proc and proc.get("data_state", "current") == "current")
+        report_current=bool(report and report.get("data_state", "current") == "current")
+        flight_status=flight.get("status") if flight else None
+        processing_status=proc.get("status") if proc else None
+        report_status=report.get("status") if report else None
+        report_delivery_status=report.get("delivery_status") if report else None
+        flown=bool(flight_current and flight_status in DONE_FLIGHT|PARTIAL_FLIGHT)
+        processed=bool(processing_current and processing_status in DONE_PROCESSING|PARTIAL_PROCESSING)
+        submitted=bool(report_current and report_status in DONE_REPORT|PARTIAL_REPORT)
+        customer_ready=bool(report_current and report_delivery_status=="Done" and submitted)
         if not p: issues.append("missing_processing")
         if not r: issues.append("missing_report")
         if flight and flight.get("data_state")=="needs_review": issues.extend(flight.get("validation_issues",[]))
