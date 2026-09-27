@@ -21,6 +21,12 @@ Connect the full portal backend to live Monday data without exposing credentials
   - Runs Flight Operations, Processing/QA, and Report Submission adapters in a temporary directory.
   - Publishes all three only if every adapter succeeds.
   - A failure leaves prior snapshots untouched.
+- Snapshot validator:
+  - `scripts/validate_delivery_snapshots.py`
+  - Prints only aggregate totals, quality counts, and missing-snapshot state.
+- Delivery tests:
+  - `tests/test_delivery_projection.py`
+  - Covers complete chains, missing stages, invalid Done reports, and duplicate stages.
 - Stale fixed record-count checks were removed from the three delivery adapters. Structural validation is used instead.
 - Completed-stage totals exclude records marked `needs_review`.
 
