@@ -14,13 +14,16 @@ import secrets
 import hashlib
 import hmac
 import sqlite3
+import sys
 import time
 import uuid
 from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from portal_metrics import build_metrics, build_person_work_heatmap, build_resource_calendar
+from backend.crew_availability import DEFAULT_DB, public_projection
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOTS = {
@@ -446,6 +449,16 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json(200, body)
             except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
                 self._json(400, {"error": str(exc), "data_state": "needs_review"})
+            return
+        if request.path == "/api/public/crew-availability":
+            month = (query.get("month") or [None])[0]
+            if month and (len(month) != 7 or month[4] != "-"):
+                self._json(400, {"error": "month must use YYYY-MM"})
+                return
+            try:
+                self._json(200, public_projection(month, Path(os.environ.get("CREW_AVAILABILITY_DB", DEFAULT_DB))))
+            except (OSError, ValueError, sqlite3.Error):
+                self._json(503, {"error": "crew availability projection unavailable", "data_state": "needs_review"})
             return
         if self.path == "/api/crew-portal/role-lenses":
             if not self._authorized():
