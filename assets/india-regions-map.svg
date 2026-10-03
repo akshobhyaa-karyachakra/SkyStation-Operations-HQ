@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 650" role="img" aria-labelledby="title desc">
+<title id="title">India operating regions</title>
+<desc id="desc">State-level operating status map. Active states are coloured by situation; states without current operations are muted.</desc>
+<style>
+.state polygon{stroke-width:2;stroke-linejoin:round}.off polygon{fill:rgba(27,31,37,.48);stroke:#343a44}.mint polygon{fill:rgba(94,211,176,.32);stroke:#5ed3b0}.amber polygon{fill:rgba(246,184,90,.30);stroke:#f6b85a}.orange polygon{fill:#f05b28;stroke:#f05b28}.review polygon{fill:rgba(27,31,37,.86);stroke:#8a929d;stroke-dasharray:6 4}.state text{font-family:Arial,sans-serif;font-size:11px;font-weight:700;text-anchor:middle;fill:#737b87}.mint text,.amber text,.orange text{fill:#f3f1ed}.state .count{font-size:9px;font-weight:500}.legend{font-family:Arial,sans-serif;font-size:10px;fill:#8a929d}
+</style>
+<path d="M137 14L181 10 210 37 230 86 264 122 302 148 337 185 362 225 350 268 364 305 346 344 337 390 314 431 302 480 275 520 260 565 244 616 205 642 166 624 141 583 112 627 90 604 101 560 82 521 84 475 62 436 40 404 19 355 8 307 21 274 17 236 36 195 55 161 75 120 102 82Z" fill="none" stroke="#69717c" stroke-width="2.5" opacity=".72" stroke-linejoin="round"/>
+<g class="state off"><polygon points="136,22 180,15 205,42 181,68 142,58"/><text x="169" y="47">JK</text></g>
+<g class="state off"><polygon points="148,70 185,65 207,91 180,114 143,104"/><text x="176" y="94">HP</text></g>
+<g class="state off"><polygon points="104,78 145,68 149,104 119,122 94,106"/><text x="123" y="101">PB</text></g>
+<g class="state off"><polygon points="178,108 215,105 228,136 196,157 170,139"/><text x="199" y="132">UK</text></g>
+<g class="state off"><polygon points="92,120 132,112 151,137 127,165 91,153"/><text x="121" y="143">HR</text></g>
+<g class="state mint"><polygon points="42,164 103,158 126,198 106,246 51,239 24,201"/><text x="76" y="199">RJ</text><text class="count" x="76" y="214">118</text></g>
+<g class="state off"><polygon points="128,158 193,153 238,180 222,225 164,225 125,198"/><text x="181" y="194">UP</text></g>
+<g class="state off"><polygon points="222,179 265,180 282,213 253,239 218,224"/><text x="248" y="211">BR</text></g>
+<g class="state off"><polygon points="265,157 283,151 294,170 281,187 263,178"/><text x="280" y="173">SK</text></g>
+<g class="state off"><polygon points="294,156 325,170 338,202 315,215 288,188"/><text x="313" y="190">AR</text></g>
+<g class="state off"><polygon points="268,239 298,221 321,250 308,315 278,292"/><text x="294" y="269">WB</text></g>
+<g class="state off"><polygon points="230,240 274,239 280,281 252,310 222,284"/><text x="253" y="271">JH</text></g>
+<g class="state mint"><polygon points="129,230 193,226 225,257 212,311 160,329 124,291"/><text x="174" y="275">MP</text><text class="count" x="174" y="290">38</text></g>
+<g class="state amber"><polygon points="29,248 88,244 119,286 94,334 43,327 17,286"/><text x="68" y="286">GJ</text><text class="count" x="68" y="301">64</text></g>
+<g class="state off"><polygon points="212,315 257,299 282,333 254,374 211,359"/><text x="245" y="339">CG</text></g>
+<g class="state off"><polygon points="279,318 318,310 337,351 316,393 278,374"/><text x="307" y="350">OD</text></g>
+<g class="state orange"><polygon points="91,335 157,327 209,359 194,416 133,439 87,400"/><text x="149" y="380">MH</text><text class="count" x="149" y="395">22</text></g>
+<g class="state off"><polygon points="63,405 94,401 107,426 87,447 60,438"/><text x="83" y="427">GA</text></g>
+<g class="state amber"><polygon points="200,377 248,374 270,414 239,447 198,430"/><text x="233" y="410">TS</text><text class="count" x="233" y="425">23</text></g>
+<g class="state mint"><polygon points="225,445 278,430 304,475 274,515 226,493"/><text x="264" y="474">AP</text><text class="count" x="264" y="489">29</text></g>
+<g class="state mint"><polygon points="115,443 180,433 219,473 207,528 151,550 111,507"/><text x="166" y="484">KA</text><text class="count" x="166" y="499">41</text></g>
+<g class="state review"><polygon points="180,528 233,514 266,554 244,604 195,620 166,576"/><text x="218" y="562">TN</text><text class="count" x="218" y="577">17</text></g>
+<g class="state off"><polygon points="117,530 151,543 164,589 141,624 112,595 103,555"/><text x="134" y="578">KL</text></g>
+<g class="state off"><polygon points="313,317 334,303 349,333 338,367 316,354"/><text x="333" y="340">MZ</text></g>
+<g class="state off"><polygon points="323,278 344,271 354,291 340,309 322,300"/><text x="339" y="293">MN</text></g>
+<g class="state off"><polygon points="305,292 322,286 331,307 316,321 304,311"/><text x="318" y="305">TR</text></g>
+<g class="state off"><polygon points="282,272 307,270 316,288 292,296 278,286"/><text x="298" y="284">ML</text></g>
+<g class="state off"><polygon points="306,225 347,220 361,246 347,273 307,268"/><text x="333" y="247">AS</text></g>
+<g class="state off"><polygon points="337,196 357,204 362,226 342,229 329,216"/><text x="347" y="218">NL</text></g>
+<g fill="#303640" stroke="#59616c" stroke-width="1"><circle cx="116" cy="143" r="4"><title>Delhi</title></circle><circle cx="158" cy="127" r="3"><title>Chandigarh</title></circle><circle cx="273" cy="498" r="3"><title>Puducherry</title></circle><circle cx="313" cy="630" r="3"><title>Andaman and Nicobar Islands</title></circle></g>
+</svg>
